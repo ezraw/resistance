@@ -130,7 +130,7 @@ class _ResistanceControlState extends State<ResistanceControl>
               radius: _pulseAnimation.value,
               colors: [
                 backgroundColor,
-                backgroundColor.withOpacity(0.8),
+                backgroundColor.withValues(alpha: 0.8),
               ],
             ),
           ),
@@ -152,8 +152,8 @@ class _ResistanceControlState extends State<ResistanceControl>
     final isDark = backgroundColor.computeLuminance() < 0.5;
     final contentColor = isDark ? Colors.white : Colors.black87;
     final panelColor = isDark
-        ? Colors.black.withOpacity(0.3)
-        : Colors.white.withOpacity(0.85);
+        ? Colors.black.withValues(alpha: 0.3)
+        : Colors.white.withValues(alpha: 0.85);
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 200),
@@ -162,7 +162,7 @@ class _ResistanceControlState extends State<ResistanceControl>
         borderRadius: BorderRadius.circular(40),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 20,
             spreadRadius: 2,
           ),
@@ -228,7 +228,7 @@ class _ResistanceControlState extends State<ResistanceControl>
           size: 80,
           color: isEnabled
               ? contentColor
-              : contentColor.withOpacity(0.3),
+              : contentColor.withValues(alpha: 0.3),
         ),
       ),
     );

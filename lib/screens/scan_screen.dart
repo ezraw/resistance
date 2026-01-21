@@ -155,7 +155,7 @@ class _ScanScreenState extends State<ScanScreen> {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.2),
+          color: Colors.red.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -225,7 +225,7 @@ class _ScanScreenState extends State<ScanScreen> {
             Icon(
               Icons.bluetooth_searching,
               size: 80,
-              color: Colors.grey.withOpacity(0.5),
+              color: Colors.grey.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             const Text(
