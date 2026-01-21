@@ -4,7 +4,7 @@
 
 - [x] **Typography**: Use Font Awesome caret-up/down for arrows, SF Rounded Bold for numbers
 - [x] **Center box color**: Make it percentage transparent of background color instead of white/dark switch
-- [ ] **Ripple wave animation**: Background color change should ripple in direction of up/down
+- [x] **Ripple wave animation**: Background color change should ripple in direction of up/down
 
 ## UX Improvements
 

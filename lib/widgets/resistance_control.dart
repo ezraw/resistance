@@ -22,11 +22,13 @@ class ResistanceControl extends StatefulWidget {
 class _ResistanceControlState extends State<ResistanceControl>
     with TickerProviderStateMixin {
   late AnimationController _pulseController;
-  late AnimationController _colorTransitionController;
+  late AnimationController _waveController;
   late Animation<double> _pulseAnimation;
+  late Animation<double> _waveAnimation;
 
   Color _previousColor = Colors.green;
   Color _targetColor = Colors.green;
+  bool _isIncreasing = true;
 
   @override
   void initState() {
@@ -46,10 +48,14 @@ class _ResistanceControlState extends State<ResistanceControl>
       }
     });
 
-    // Color transition animation
-    _colorTransitionController = AnimationController(
-      duration: const Duration(milliseconds: 400),
+    // Wave animation for color transitions
+    _waveController = AnimationController(
+      duration: const Duration(milliseconds: 350),
       vsync: this,
+    );
+    _waveAnimation = CurvedAnimation(
+      parent: _waveController,
+      curve: Curves.easeOutCubic,
     );
 
     _previousColor = _getColorForLevel(widget.currentLevel);
@@ -60,16 +66,22 @@ class _ResistanceControlState extends State<ResistanceControl>
   void didUpdateWidget(ResistanceControl oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.currentLevel != widget.currentLevel) {
-      _previousColor = _getColorForLevel(oldWidget.currentLevel);
+      // Capture current interpolated color if animation is in progress
+      if (_waveController.isAnimating) {
+        _previousColor = Color.lerp(_previousColor, _targetColor, _waveAnimation.value)!;
+      } else {
+        _previousColor = _getColorForLevel(oldWidget.currentLevel);
+      }
       _targetColor = _getColorForLevel(widget.currentLevel);
-      _colorTransitionController.forward(from: 0);
+      _isIncreasing = widget.currentLevel > oldWidget.currentLevel;
+      _waveController.forward(from: 0);
     }
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
-    _colorTransitionController.dispose();
+    _waveController.dispose();
     super.dispose();
   }
 
@@ -116,33 +128,77 @@ class _ResistanceControlState extends State<ResistanceControl>
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([_pulseAnimation, _colorTransitionController]),
+      animation: Listenable.merge([_pulseAnimation, _waveAnimation]),
       builder: (context, child) {
-        final backgroundColor = Color.lerp(
-          _previousColor,
-          _targetColor,
-          _colorTransitionController.value,
-        )!;
+        final waveProgress = _waveAnimation.value;
 
-        return Container(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment.center,
-              radius: _pulseAnimation.value,
-              colors: [
-                backgroundColor,
-                backgroundColor.withValues(alpha: 0.8),
-              ],
-            ),
-          ),
-          child: SafeArea(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
-                child: _buildControlPanel(backgroundColor),
+        // Calculate the display color for UI elements (interpolated based on wave progress)
+        final displayColor = Color.lerp(_previousColor, _targetColor, waveProgress)!;
+
+        return Stack(
+          children: [
+            // Base layer: previous color with pulse effect
+            Container(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.center,
+                  radius: _pulseAnimation.value,
+                  colors: [
+                    _previousColor,
+                    _previousColor.withValues(alpha: 0.8),
+                  ],
+                ),
               ),
             ),
-          ),
+
+            // Wave overlay: new color sweeping in with gradient trail
+            if (waveProgress > 0 && waveProgress < 1)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: _isIncreasing ? Alignment.bottomCenter : Alignment.topCenter,
+                      end: _isIncreasing ? Alignment.topCenter : Alignment.bottomCenter,
+                      colors: [
+                        _targetColor,
+                        _targetColor,
+                        _targetColor.withValues(alpha: 0.0),
+                      ],
+                      stops: [
+                        0.0,
+                        (waveProgress - 0.08).clamp(0.0, 1.0),  // Sharp edge
+                        waveProgress.clamp(0.0, 1.0),           // Short fade
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+            // Final state: target color when animation completes
+            if (waveProgress >= 1)
+              Container(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment.center,
+                    radius: _pulseAnimation.value,
+                    colors: [
+                      _targetColor,
+                      _targetColor.withValues(alpha: 0.8),
+                    ],
+                  ),
+                ),
+              ),
+
+            // UI content layer
+            SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+                  child: _buildControlPanel(displayColor),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -225,6 +281,7 @@ class _ResistanceControlState extends State<ResistanceControl>
       behavior: HitTestBehavior.opaque,
       child: Container(
         width: double.infinity,
+        alignment: Alignment.center,
         padding: EdgeInsets.only(
           top: isTop ? 30 : 10,
           bottom: isTop ? 10 : 30,
@@ -240,3 +297,4 @@ class _ResistanceControlState extends State<ResistanceControl>
     );
   }
 }
+
