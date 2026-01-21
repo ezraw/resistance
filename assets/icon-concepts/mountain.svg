@@ -1,0 +1,44 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mountainGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#4CAF50"/>
+      <stop offset="25%" style="stop-color:#8BC34A"/>
+      <stop offset="45%" style="stop-color:#CDDC39"/>
+      <stop offset="60%" style="stop-color:#FFC107"/>
+      <stop offset="80%" style="stop-color:#FF5722"/>
+      <stop offset="100%" style="stop-color:#D32F2F"/>
+    </linearGradient>
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#87CEEB"/>
+      <stop offset="100%" style="stop-color:#5DADE2"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="19%" cy="18%" r="104%" fx="19%" fy="18%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.72"/>
+      <stop offset="50%" style="stop-color:#FFFFFF;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Sky background -->
+  <rect width="512" height="512" rx="115" fill="url(#skyGrad)"/>
+
+  <!-- Sun glow in top-left -->
+  <rect width="512" height="512" rx="115" fill="url(#sunGlow)"/>
+
+  <!-- Mountain shape -->
+  <path d="M 80 426
+           L 220 166
+           L 280 246
+           L 380 126
+           L 432 426
+           Z"
+        fill="url(#mountainGradient)"/>
+
+
+  <!-- Subtle shadow -->
+  <path d="M 220 166
+           L 280 246
+           L 256 426
+           L 150 426
+           Z"
+        fill="rgba(0,0,0,0.1)"/>
+</svg>
