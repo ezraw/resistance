@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:resistance_app/widgets/resistance_control.dart';
 
 void main() {
@@ -53,8 +54,10 @@ void main() {
         ),
       );
 
-      // Find the up arrow icon and tap it
-      final upArrow = find.byIcon(Icons.keyboard_arrow_up);
+      // Find the up caret icon and tap it
+      final upArrow = find.byWidgetPredicate(
+        (widget) => widget is FaIcon && widget.icon == FontAwesomeIcons.caretUp,
+      );
       await tester.tap(upArrow);
       await tester.pump();
 
@@ -76,8 +79,10 @@ void main() {
         ),
       );
 
-      // Find the down arrow icon and tap it
-      final downArrow = find.byIcon(Icons.keyboard_arrow_down);
+      // Find the down caret icon and tap it
+      final downArrow = find.byWidgetPredicate(
+        (widget) => widget is FaIcon && widget.icon == FontAwesomeIcons.caretDown,
+      );
       await tester.tap(downArrow);
       await tester.pump();
 
@@ -99,7 +104,9 @@ void main() {
         ),
       );
 
-      final upArrow = find.byIcon(Icons.keyboard_arrow_up);
+      final upArrow = find.byWidgetPredicate(
+        (widget) => widget is FaIcon && widget.icon == FontAwesomeIcons.caretUp,
+      );
       await tester.tap(upArrow);
       await tester.pump();
 
@@ -121,38 +128,12 @@ void main() {
         ),
       );
 
-      final downArrow = find.byIcon(Icons.keyboard_arrow_down);
-      await tester.tap(downArrow);
-      await tester.pump();
-
-      expect(decreased, isFalse);
-    });
-
-    testWidgets('does not respond when isUpdating is true', (WidgetTester tester) async {
-      bool increased = false;
-      bool decreased = false;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ResistanceControl(
-              currentLevel: 5,
-              onIncrease: () => increased = true,
-              onDecrease: () => decreased = true,
-              isUpdating: true,
-            ),
-          ),
-        ),
+      final downArrow = find.byWidgetPredicate(
+        (widget) => widget is FaIcon && widget.icon == FontAwesomeIcons.caretDown,
       );
-
-      final upArrow = find.byIcon(Icons.keyboard_arrow_up);
-      final downArrow = find.byIcon(Icons.keyboard_arrow_down);
-
-      await tester.tap(upArrow);
       await tester.tap(downArrow);
       await tester.pump();
 
-      expect(increased, isFalse);
       expect(decreased, isFalse);
     });
   });

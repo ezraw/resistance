@@ -18,7 +18,8 @@ class _HomeScreenState extends State<HomeScreen> {
   late int _currentLevel;
   StreamSubscription<TrainerConnectionState>? _connectionSubscription;
   StreamSubscription<int>? _resistanceSubscription;
-  bool _isUpdating = false;
+  Timer? _debounceTimer;
+  int _pendingLevel = 0;
 
   @override
   void initState() {
@@ -38,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _connectionSubscription?.cancel();
     _resistanceSubscription?.cancel();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -60,62 +62,50 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _increaseResistance() async {
-    if (_isUpdating || _currentLevel >= 10) return;
+  void _increaseResistance() {
+    if (_currentLevel >= 10) return;
 
-    setState(() {
-      _isUpdating = true;
-    });
+    // Immediate haptic feedback (light is faster than medium)
+    HapticFeedback.lightImpact();
 
-    // Haptic feedback
-    HapticFeedback.mediumImpact();
-
-    // Optimistic update
+    // Immediate UI update
     setState(() {
       _currentLevel = (_currentLevel + 1).clamp(1, 10);
     });
 
-    final success = await widget.bleService.increaseResistance();
-    if (!success && mounted) {
-      // Revert on failure
-      setState(() {
-        _currentLevel = widget.bleService.currentResistanceLevel;
-      });
-    }
-
-    if (mounted) {
-      setState(() {
-        _isUpdating = false;
-      });
-    }
+    // Debounced BLE update - wait for rapid taps to finish
+    _scheduleBleUpdate(_currentLevel);
   }
 
-  Future<void> _decreaseResistance() async {
-    if (_isUpdating || _currentLevel <= 1) return;
+  void _decreaseResistance() {
+    if (_currentLevel <= 1) return;
 
-    setState(() {
-      _isUpdating = true;
-    });
+    // Immediate haptic feedback (light is faster than medium)
+    HapticFeedback.lightImpact();
 
-    // Haptic feedback
-    HapticFeedback.mediumImpact();
-
-    // Optimistic update
+    // Immediate UI update
     setState(() {
       _currentLevel = (_currentLevel - 1).clamp(1, 10);
     });
 
-    final success = await widget.bleService.decreaseResistance();
+    // Debounced BLE update - wait for rapid taps to finish
+    _scheduleBleUpdate(_currentLevel);
+  }
+
+  void _scheduleBleUpdate(int level) {
+    _pendingLevel = level;
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 150), () {
+      _sendBleUpdate(_pendingLevel);
+    });
+  }
+
+  Future<void> _sendBleUpdate(int level) async {
+    final success = await widget.bleService.setResistanceLevel(level);
     if (!success && mounted) {
-      // Revert on failure
+      // Revert to actual trainer level on failure
       setState(() {
         _currentLevel = widget.bleService.currentResistanceLevel;
-      });
-    }
-
-    if (mounted) {
-      setState(() {
-        _isUpdating = false;
       });
     }
   }
@@ -150,26 +140,26 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GestureDetector(
-        onLongPress: _showDisconnectDialog,
-        child: Stack(
-          children: [
-            // Main resistance control (full screen)
-            ResistanceControl(
-              currentLevel: _currentLevel,
-              onIncrease: _increaseResistance,
-              onDecrease: _decreaseResistance,
-              isUpdating: _isUpdating,
-            ),
+      body: Stack(
+        children: [
+          // Main resistance control (full screen)
+          ResistanceControl(
+            currentLevel: _currentLevel,
+            onIncrease: _increaseResistance,
+            onDecrease: _decreaseResistance,
+          ),
 
-            // Connection status indicator (top-left, subtle)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 8,
-              left: 16,
+          // Connection status indicator (top-left, subtle)
+          // Long-press to disconnect
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            left: 16,
+            child: GestureDetector(
+              onLongPress: _showDisconnectDialog,
               child: _buildConnectionIndicator(),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

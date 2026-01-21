@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ResistanceControl extends StatefulWidget {
   final int currentLevel;
@@ -151,9 +152,13 @@ class _ResistanceControlState extends State<ResistanceControl>
     // Determine text/icon color based on background brightness
     final isDark = backgroundColor.computeLuminance() < 0.5;
     final contentColor = isDark ? Colors.white : Colors.black87;
-    final panelColor = isDark
-        ? Colors.black.withValues(alpha: 0.3)
-        : Colors.white.withValues(alpha: 0.85);
+    // Panel is a darker, semi-transparent version of the background color
+    final HSLColor hsl = HSLColor.fromColor(backgroundColor);
+    final panelColor = hsl
+        .withLightness((hsl.lightness * 0.6).clamp(0.0, 1.0))
+        .withSaturation((hsl.saturation * 0.8).clamp(0.0, 1.0))
+        .toColor()
+        .withValues(alpha: 0.5);
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 200),
@@ -173,7 +178,7 @@ class _ResistanceControlState extends State<ResistanceControl>
         children: [
           // UP button
           _buildButton(
-            icon: Icons.keyboard_arrow_up,
+            icon: FontAwesomeIcons.caretUp,
             onTap: _handleIncrease,
             isEnabled: widget.currentLevel < 10 && !widget.isUpdating,
             contentColor: contentColor,
@@ -187,7 +192,8 @@ class _ResistanceControlState extends State<ResistanceControl>
               '${widget.currentLevel}',
               style: TextStyle(
                 fontSize: 100,
-                fontWeight: FontWeight.w300,
+                fontWeight: FontWeight.w700,
+                fontFamily: '.SF Pro Rounded',
                 color: contentColor,
                 height: 1,
               ),
@@ -196,7 +202,7 @@ class _ResistanceControlState extends State<ResistanceControl>
 
           // DOWN button
           _buildButton(
-            icon: Icons.keyboard_arrow_down,
+            icon: FontAwesomeIcons.caretDown,
             onTap: _handleDecrease,
             isEnabled: widget.currentLevel > 1 && !widget.isUpdating,
             contentColor: contentColor,
@@ -223,9 +229,9 @@ class _ResistanceControlState extends State<ResistanceControl>
           top: isTop ? 30 : 10,
           bottom: isTop ? 10 : 30,
         ),
-        child: Icon(
+        child: FaIcon(
           icon,
-          size: 80,
+          size: 70,
           color: isEnabled
               ? contentColor
               : contentColor.withValues(alpha: 0.3),
