@@ -15,6 +15,10 @@
 - [x] **Long-tap scope**: Disconnect dialog triggers on long-tap anywhere - should only trigger on the connected indicator
 - [ ] **Crash on long-tap**: Long-tapping the green connected indicator crashed the app (not reproducible now - monitor)
 
+## UX Enhancements
+
+- [ ] **Finer resistance control**: Change from 10 levels (10% jumps) to 20 levels with 0.5 increments (5% jumps)
+
 ## HealthKit Enhancements
 
 - [ ] **Record speed (MPH)**: Read speed data from trainer via FTMS and save to HealthKit
