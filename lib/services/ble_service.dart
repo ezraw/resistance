@@ -68,12 +68,29 @@ class BleService {
 
   /// Start scanning for FTMS devices
   Future<Stream<List<ScanResult>>> startScan() async {
+    // Wait for Bluetooth to be ready (up to 5 seconds)
+    try {
+      await FlutterBluePlus.adapterState
+          .where((state) => state == BluetoothAdapterState.on)
+          .first
+          .timeout(const Duration(seconds: 5));
+    } catch (e) {
+      print('Bluetooth not ready: $e');
+      _updateState(TrainerConnectionState.error);
+      return const Stream.empty();
+    }
+
     _updateState(TrainerConnectionState.scanning);
 
-    await FlutterBluePlus.startScan(
-      withServices: [FtmsUuids.service],
-      timeout: const Duration(seconds: 15),
-    );
+    try {
+      await FlutterBluePlus.startScan(
+        withServices: [FtmsUuids.service],
+        timeout: const Duration(seconds: 15),
+      );
+    } catch (e) {
+      print('Scan failed: $e');
+      _updateState(TrainerConnectionState.error);
+    }
 
     return FlutterBluePlus.scanResults;
   }
@@ -145,6 +162,17 @@ class BleService {
     final lastDeviceId = await _getLastDeviceId();
     if (lastDeviceId == null) return false;
 
+    // Wait for Bluetooth to be ready (up to 5 seconds)
+    try {
+      await FlutterBluePlus.adapterState
+          .where((state) => state == BluetoothAdapterState.on)
+          .first
+          .timeout(const Duration(seconds: 5));
+    } catch (e) {
+      print('Bluetooth not ready for auto-connect: $e');
+      return false;
+    }
+
     _updateState(TrainerConnectionState.scanning);
 
     // Scan for the specific device
@@ -161,10 +189,16 @@ class BleService {
       }
     });
 
-    await FlutterBluePlus.startScan(
-      withServices: [FtmsUuids.service],
-      timeout: const Duration(seconds: 10),
-    );
+    try {
+      await FlutterBluePlus.startScan(
+        withServices: [FtmsUuids.service],
+        timeout: const Duration(seconds: 10),
+      );
+    } catch (e) {
+      print('Auto-connect scan failed: $e');
+      _updateState(TrainerConnectionState.disconnected);
+      return false;
+    }
 
     // Wait for device or timeout
     final device = await deviceCompleter.future.timeout(

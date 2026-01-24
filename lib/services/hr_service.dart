@@ -50,12 +50,29 @@ class HrService {
 
   /// Start scanning for HR monitors
   Future<Stream<List<ScanResult>>> startScan() async {
+    // Wait for Bluetooth to be ready (up to 5 seconds)
+    try {
+      await FlutterBluePlus.adapterState
+          .where((state) => state == BluetoothAdapterState.on)
+          .first
+          .timeout(const Duration(seconds: 5));
+    } catch (e) {
+      print('Bluetooth not ready for HR scan: $e');
+      _updateState(HrConnectionState.error);
+      return const Stream.empty();
+    }
+
     _updateState(HrConnectionState.scanning);
 
-    await FlutterBluePlus.startScan(
-      withServices: [HrUuids.service],
-      timeout: const Duration(seconds: 15),
-    );
+    try {
+      await FlutterBluePlus.startScan(
+        withServices: [HrUuids.service],
+        timeout: const Duration(seconds: 15),
+      );
+    } catch (e) {
+      print('HR scan failed: $e');
+      _updateState(HrConnectionState.error);
+    }
 
     return FlutterBluePlus.scanResults;
   }

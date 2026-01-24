@@ -23,9 +23,11 @@ class WorkoutControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 12,
+        runSpacing: 12,
         children: _buildButtons(),
       ),
     );
@@ -44,18 +46,12 @@ class WorkoutControls extends StatelessWidget {
         ];
 
       case WorkoutState.active:
+        // Only show Pause when running - Finish requires pausing first
         return [
           _WorkoutButton(
             icon: Icons.pause_rounded,
             label: 'Pause',
             onTap: onPause,
-            isPrimary: false,
-          ),
-          const SizedBox(width: 16),
-          _WorkoutButton(
-            icon: Icons.stop_rounded,
-            label: 'Finish',
-            onTap: onFinish,
             isPrimary: true,
           ),
         ];
@@ -68,14 +64,12 @@ class WorkoutControls extends StatelessWidget {
             onTap: onResume,
             isPrimary: true,
           ),
-          const SizedBox(width: 16),
           _WorkoutButton(
             icon: Icons.restart_alt_rounded,
             label: 'Restart',
             onTap: onRestart,
             isPrimary: false,
           ),
-          const SizedBox(width: 16),
           _WorkoutButton(
             icon: Icons.stop_rounded,
             label: 'Finish',

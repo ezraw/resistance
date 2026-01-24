@@ -56,11 +56,11 @@ void main() {
     });
 
     group('Active State', () {
-      testWidgets('shows Pause and Finish buttons', (WidgetTester tester) async {
+      testWidgets('shows only Pause button', (WidgetTester tester) async {
         await tester.pumpWidget(buildWidget(WorkoutState.active));
 
         expect(find.text('Pause'), findsOneWidget);
-        expect(find.text('Finish'), findsOneWidget);
+        expect(find.text('Finish'), findsNothing); // Finish only shows when paused
       });
 
       testWidgets('does not show Start button', (WidgetTester tester) async {
@@ -75,15 +75,6 @@ void main() {
         await tester.pump();
 
         expect(pauseCalled, isTrue);
-      });
-
-      testWidgets('calls onFinish when Finish is tapped', (WidgetTester tester) async {
-        await tester.pumpWidget(buildWidget(WorkoutState.active));
-
-        await tester.tap(find.text('Finish'));
-        await tester.pump();
-
-        expect(finishCalled, isTrue);
       });
     });
 

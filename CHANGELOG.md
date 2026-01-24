@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - **Black screen after HR connection**: Fixed critical bug where connecting to HR monitor would cause black screen. Root cause was duplicate `Navigator.pop()` calls in HR scan sheet.
+- **Bluetooth scan reliability**: Added Bluetooth adapter readiness checks before scanning for trainers or HR monitors. Scans now wait up to 5 seconds for Bluetooth to be ready.
+- **Scan error handling**: BLE scan failures are now caught and handled gracefully instead of crashing.
 
 ### Added
 - **HR connection before workout**: Heart rate monitor can now be connected from idle screen (top-right button) before starting a workout, not just during active workout.
@@ -13,6 +15,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - HR scan sheet now only dismisses on successful connection from `_connectToDevice`, not from connection state listener.
+- **Simplified workout controls**: Removed Finish button from active workout state. Users must now pause before finishing, which prevents accidental workout termination.
+- Workout control buttons now use Wrap layout for better responsiveness on different screen sizes.
+- Xcode scheme defaults to Release build configuration.
 
 ### Dependencies
 - Added `confetti: ^0.7.0` for workout completion animation
@@ -35,7 +40,7 @@ All notable changes to this project will be documented in this file.
 
 - **Workout Controls**: Bottom button bar
   - Start button when idle
-  - Pause/Finish during active workout
+  - Pause button during active workout
   - Resume/Restart/Finish when paused
   - Haptic feedback on button presses
 
