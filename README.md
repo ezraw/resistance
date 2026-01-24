@@ -33,6 +33,15 @@ A minimal mobile app with two buttons (up/down) and a level display (1-10) that 
 - Average and max HR tracking
 - Confetti celebration on workout completion
 
+### Apple Health Integration
+- Workouts automatically saved to Apple Health after completion
+- Includes duration, activity type (Cycling), and heart rate samples
+- Heart rate zones calculated automatically by Apple Fitness
+
+### Crash Logging
+- Firebase Crashlytics integration for automatic crash reporting
+- Captures both Flutter and native iOS crashes
+
 ## Future Enhancements
 
 - Zwift Ride handlebar control integration (use shift buttons to adjust resistance)
@@ -77,7 +86,8 @@ lib/
 ├── services/
 │   ├── ble_service.dart           # Bluetooth FTMS communication
 │   ├── workout_service.dart       # Workout timer and state
-│   └── hr_service.dart            # Heart rate monitor BLE
+│   ├── hr_service.dart            # Heart rate monitor BLE
+│   └── health_service.dart        # Apple HealthKit integration
 └── widgets/
     ├── resistance_control.dart    # Up/Down/Level widget
     ├── workout_stats_bar.dart     # Timer + HR display bar

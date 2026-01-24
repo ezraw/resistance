@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-01-24
+
+### Added
+- **Apple Health Integration**: Workouts automatically save to Apple Health
+  - Duration and activity type (Cycling) saved
+  - Individual heart rate samples saved with timestamps
+  - Apple Fitness calculates heart rate zones automatically
+  - Status indicator on workout summary screen
+  - Permission request on first save attempt
+
+- **Firebase Crashlytics**: Automatic crash reporting
+  - Captures uncaught Flutter errors
+  - Captures async errors
+  - Crash reports uploaded on next app launch
+
+### Technical Details
+- `HealthService`: Apple HealthKit wrapper using `health` package
+- `HeartRateReading`: New class to track HR with timestamps for HealthKit
+- `WorkoutService.workoutStartTime`: Track absolute start time for HealthKit
+- `WorkoutService.heartRateReadings`: Exposes HR list for HealthKit integration
+- 76 unit and widget tests (up from 71)
+
+### Dependencies
+- Added `firebase_core: ^3.8.1`
+- Added `firebase_crashlytics: ^4.2.1`
+- Added `health: ^11.1.0`
+
+### Setup Required
+- Firebase project configuration (`flutterfire configure`)
+- HealthKit capability must be added in Xcode
+
 ## [0.2.1] - 2026-01-24
 
 ### Fixed

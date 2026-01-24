@@ -4,18 +4,21 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../services/ble_service.dart';
 import '../services/workout_service.dart';
 import '../services/hr_service.dart';
+import '../services/health_service.dart';
 import 'home_screen.dart';
 
 class ScanScreen extends StatefulWidget {
   final BleService bleService;
   final WorkoutService workoutService;
   final HrService hrService;
+  final HealthService healthService;
 
   const ScanScreen({
     super.key,
     required this.bleService,
     required this.workoutService,
     required this.hrService,
+    required this.healthService,
   });
 
   @override
@@ -126,6 +129,7 @@ class _ScanScreenState extends State<ScanScreen> {
           bleService: widget.bleService,
           workoutService: widget.workoutService,
           hrService: widget.hrService,
+          healthService: widget.healthService,
         ),
       ),
     );

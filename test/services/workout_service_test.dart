@@ -210,6 +210,79 @@ void main() {
         expect(service.averageHeartRate, equals(0));
         expect(service.maxHeartRate, equals(0));
       });
+
+      test('heartRateReadings returns list with timestamps', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        final beforeRecord = DateTime.now();
+        service.recordHeartRate(120);
+        final afterRecord = DateTime.now();
+
+        expect(service.heartRateReadings.length, equals(1));
+        expect(service.heartRateReadings.first.bpm, equals(120));
+        expect(
+          service.heartRateReadings.first.timestamp.isAfter(beforeRecord.subtract(const Duration(seconds: 1))),
+          isTrue,
+        );
+        expect(
+          service.heartRateReadings.first.timestamp.isBefore(afterRecord.add(const Duration(seconds: 1))),
+          isTrue,
+        );
+      });
+
+      test('heartRateReadings returns unmodifiable list', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+        service.recordHeartRate(120);
+
+        final readings = service.heartRateReadings;
+        expect(() => readings.add(HeartRateReading(bpm: 130, timestamp: DateTime.now())), throwsUnsupportedError);
+      });
+    });
+
+    group('Workout Timestamps for HealthKit', () {
+      test('workoutStartTime is null initially', () {
+        expect(service.workoutStartTime, isNull);
+      });
+
+      test('workoutStartTime is set when workout starts', () async {
+        final beforeStart = DateTime.now();
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+        final afterStart = DateTime.now();
+
+        expect(service.workoutStartTime, isNotNull);
+        expect(
+          service.workoutStartTime!.isAfter(beforeStart.subtract(const Duration(seconds: 1))),
+          isTrue,
+        );
+        expect(
+          service.workoutStartTime!.isBefore(afterStart.add(const Duration(seconds: 1))),
+          isTrue,
+        );
+      });
+
+      test('workoutStartTime is reset on restart', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 50));
+        final firstStartTime = service.workoutStartTime;
+
+        service.restart();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        expect(service.workoutStartTime, isNotNull);
+        expect(service.workoutStartTime!.isAfter(firstStartTime!), isTrue);
+      });
+
+      test('workoutStartTime is cleared on reset', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+        service.finish();
+        service.reset();
+
+        expect(service.workoutStartTime, isNull);
+      });
     });
 
     group('Helper Properties', () {

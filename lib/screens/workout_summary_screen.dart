@@ -3,15 +3,18 @@ import 'package:flutter/services.dart';
 import 'package:confetti/confetti.dart';
 import '../services/workout_service.dart';
 import '../services/ble_service.dart';
+import '../services/health_service.dart';
 
 class WorkoutSummaryScreen extends StatefulWidget {
   final WorkoutService workoutService;
   final BleService bleService;
+  final HealthService healthService;
 
   const WorkoutSummaryScreen({
     super.key,
     required this.workoutService,
     required this.bleService,
+    required this.healthService,
   });
 
   @override
@@ -20,6 +23,10 @@ class WorkoutSummaryScreen extends StatefulWidget {
 
 class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
   late ConfettiController _confettiController;
+
+  // HealthKit save state
+  bool _healthSaving = false;
+  bool? _healthSaveSuccess;
 
   @override
   void initState() {
@@ -30,12 +37,39 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
     // Initialize and start confetti animation
     _confettiController = ConfettiController(duration: const Duration(seconds: 3));
     _confettiController.play();
+
+    // Auto-save to HealthKit
+    _saveToHealthKit();
   }
 
   @override
   void dispose() {
     _confettiController.dispose();
     super.dispose();
+  }
+
+  Future<void> _saveToHealthKit() async {
+    if (!widget.healthService.isAvailable) return;
+
+    final startTime = widget.workoutService.workoutStartTime;
+    if (startTime == null) return;
+
+    setState(() {
+      _healthSaving = true;
+    });
+
+    final success = await widget.healthService.saveWorkout(
+      startTime: startTime,
+      duration: widget.workoutService.finalDuration,
+      heartRateReadings: widget.workoutService.heartRateReadings,
+    );
+
+    if (mounted) {
+      setState(() {
+        _healthSaving = false;
+        _healthSaveSuccess = success;
+      });
+    }
   }
 
   String _formatDuration(Duration duration) {
@@ -152,6 +186,12 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
                   ),
                 ),
 
+              // HealthKit save status
+              if (widget.healthService.isAvailable) ...[
+                const SizedBox(height: 24),
+                _buildHealthKitStatus(),
+              ],
+
               const Spacer(),
 
               // Done button
@@ -204,6 +244,76 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildHealthKitStatus() {
+    if (_healthSaving) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.white54,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Saving to Apple Health...',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 14,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (_healthSaveSuccess == true) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.check_circle,
+            color: Colors.green,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Saved to Apple Health',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 14,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (_healthSaveSuccess == false) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.info_outline,
+            color: Colors.orange,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Could not save to Apple Health',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 14,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 
   Widget _buildStatCard({

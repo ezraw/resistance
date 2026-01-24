@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../services/ble_service.dart';
 import '../services/workout_service.dart';
 import '../services/hr_service.dart';
+import '../services/health_service.dart';
 import '../widgets/resistance_control.dart';
 import '../widgets/workout_stats_bar.dart';
 import '../widgets/workout_controls.dart';
@@ -15,12 +16,14 @@ class HomeScreen extends StatefulWidget {
   final BleService bleService;
   final WorkoutService workoutService;
   final HrService hrService;
+  final HealthService healthService;
 
   const HomeScreen({
     super.key,
     required this.bleService,
     required this.workoutService,
     required this.hrService,
+    required this.healthService,
   });
 
   @override
@@ -90,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
               bleService: widget.bleService,
               workoutService: widget.workoutService,
               hrService: widget.hrService,
+              healthService: widget.healthService,
             ),
           ),
         );
@@ -112,6 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   bleService: widget.bleService,
                   workoutService: widget.workoutService,
                   hrService: widget.hrService,
+                  healthService: widget.healthService,
                 ),
               ),
             );
@@ -180,6 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context) => WorkoutSummaryScreen(
           workoutService: widget.workoutService,
           bleService: widget.bleService,
+          healthService: widget.healthService,
         ),
       ),
     );

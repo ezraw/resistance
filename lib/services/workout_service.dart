@@ -8,6 +8,14 @@ enum WorkoutState {
   finished,
 }
 
+/// Heart rate reading with timestamp for HealthKit integration
+class HeartRateReading {
+  final int bpm;
+  final DateTime timestamp;
+
+  HeartRateReading({required this.bpm, required this.timestamp});
+}
+
 /// Service for managing workout timer and state
 class WorkoutService {
   final _stateController = StreamController<WorkoutState>.broadcast();
@@ -16,11 +24,12 @@ class WorkoutService {
   WorkoutState _currentState = WorkoutState.idle;
   Timer? _timer;
   DateTime? _startTime;
+  DateTime? _workoutStartTime;  // Track absolute start time for HealthKit
   Duration _accumulated = Duration.zero;
   Duration _finalDuration = Duration.zero;
 
-  // Heart rate tracking
-  final List<int> _heartRateReadings = [];
+  // Heart rate tracking with timestamps for HealthKit
+  final List<HeartRateReading> _heartRateReadings = [];
   int _maxHeartRate = 0;
 
   /// Stream of workout state changes
@@ -42,11 +51,18 @@ class WorkoutService {
   /// Average heart rate during workout (0 if no readings)
   int get averageHeartRate {
     if (_heartRateReadings.isEmpty) return 0;
-    return (_heartRateReadings.reduce((a, b) => a + b) / _heartRateReadings.length).round();
+    final sum = _heartRateReadings.fold(0, (sum, reading) => sum + reading.bpm);
+    return (sum / _heartRateReadings.length).round();
   }
 
   /// Maximum heart rate during workout
   int get maxHeartRate => _maxHeartRate;
+
+  /// Heart rate readings with timestamps for HealthKit
+  List<HeartRateReading> get heartRateReadings => List.unmodifiable(_heartRateReadings);
+
+  /// Workout start time for HealthKit
+  DateTime? get workoutStartTime => _workoutStartTime;
 
   /// Whether workout is currently active (not paused)
   bool get isActive => _currentState == WorkoutState.active;
@@ -59,7 +75,9 @@ class WorkoutService {
   void start() {
     if (_currentState != WorkoutState.idle) return;
 
-    _startTime = DateTime.now();
+    final now = DateTime.now();
+    _startTime = now;
+    _workoutStartTime = now;  // Track for HealthKit
     _accumulated = Duration.zero;
     _heartRateReadings.clear();
     _maxHeartRate = 0;
@@ -92,7 +110,9 @@ class WorkoutService {
   /// Restart the workout (reset timer and state)
   void restart() {
     _stopTimer();
-    _startTime = DateTime.now();
+    final now = DateTime.now();
+    _startTime = now;
+    _workoutStartTime = now;  // Track for HealthKit
     _accumulated = Duration.zero;
     _heartRateReadings.clear();
     _maxHeartRate = 0;
@@ -119,6 +139,7 @@ class WorkoutService {
   void reset() {
     _stopTimer();
     _startTime = null;
+    _workoutStartTime = null;
     _accumulated = Duration.zero;
     _finalDuration = Duration.zero;
     _heartRateReadings.clear();
@@ -126,11 +147,11 @@ class WorkoutService {
     _updateState(WorkoutState.idle);
   }
 
-  /// Record a heart rate reading (call this when HR updates during workout)
+  /// Record a heart rate reading with timestamp (call this when HR updates during workout)
   void recordHeartRate(int bpm) {
     if (!isInProgress || bpm <= 0) return;
 
-    _heartRateReadings.add(bpm);
+    _heartRateReadings.add(HeartRateReading(bpm: bpm, timestamp: DateTime.now()));
     if (bpm > _maxHeartRate) {
       _maxHeartRate = bpm;
     }
