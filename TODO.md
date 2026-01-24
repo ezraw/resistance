@@ -15,8 +15,8 @@
 - [x] **Long-tap scope**: Disconnect dialog triggers on long-tap anywhere - should only trigger on the connected indicator
 - [ ] **Crash on long-tap**: Long-tapping the green connected indicator crashed the app (not reproducible now - monitor)
 
-## Distribution
+## HealthKit Enhancements
 
-- [ ] **Apple Developer Account**: Sign up for paid account ($99/year)
-- [ ] **TestFlight setup**: Configure app for TestFlight distribution
-- [ ] **Invite testers**: Add wife's email to TestFlight beta testers
+- [ ] **Record speed (MPH)**: Read speed data from trainer via FTMS and save to HealthKit
+- [ ] **Indoor cycling activity type**: Request `health` package add iOS indoor cycling support (currently shows as outdoor)
+
