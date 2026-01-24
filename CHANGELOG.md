@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2026-01-24
+
+### Added
+- **Workout Timer**: Track your workout duration
+  - Start/pause/resume/restart/finish controls
+  - Elapsed time display (MM:SS or HH:MM:SS)
+  - Stats bar at top during active workout
+  - Workout summary screen after finishing
+
+- **Heart Rate Monitor Support**: Connect BLE heart rate monitors
+  - Scan and connect to HR monitors (Polar, Wahoo, etc.)
+  - Real-time heart rate display during workout
+  - Supports both 8-bit and 16-bit HR formats per BLE spec
+  - Average and max HR tracking in workout summary
+  - Tap HR display to connect/reconnect
+
+- **Workout Controls**: Bottom button bar
+  - Start button when idle
+  - Pause/Finish during active workout
+  - Resume/Restart/Finish when paused
+  - Haptic feedback on button presses
+
+- **UI Improvements**
+  - Semi-transparent stats bar overlay
+  - Connection indicator only shows when not in workout
+  - Directional wave animations for resistance changes
+  - Adjusted control panel padding for overlay elements
+
+### Technical Details
+- `WorkoutService`: State machine with timer (idle → active ↔ paused → finished)
+- `HrService`: BLE Heart Rate Service (0x180D) with measurement parsing (0x2A37)
+- `WorkoutStatsBar`, `WorkoutControls`, `HeartRateDisplay` widgets
+- `HrScanSheet` bottom sheet for HR monitor discovery
+- `WorkoutSummaryScreen` for post-workout stats
+- 71 unit and widget tests
+
 ## [0.1.0] - 2026-01-20
 
 ### Added

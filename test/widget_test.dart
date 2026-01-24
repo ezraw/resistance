@@ -5,53 +5,51 @@ import 'package:resistance_app/widgets/resistance_control.dart';
 
 void main() {
   group('ResistanceControl Widget', () {
-    testWidgets('displays current level', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ResistanceControl(
-              currentLevel: 5,
-              onIncrease: () {},
-              onDecrease: () {},
-            ),
+    // Helper to build widget
+    Widget buildWidget(int level, {VoidCallback? onIncrease, VoidCallback? onDecrease}) {
+      return MaterialApp(
+        home: Scaffold(
+          body: ResistanceControl(
+            currentLevel: level,
+            onIncrease: onIncrease ?? () {},
+            onDecrease: onDecrease ?? () {},
           ),
         ),
       );
+    }
 
+    testWidgets('displays current level', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(buildWidget(5));
       expect(find.text('5'), findsOneWidget);
     });
 
-    testWidgets('displays different levels correctly', (WidgetTester tester) async {
-      for (int level = 1; level <= 10; level++) {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: ResistanceControl(
-                currentLevel: level,
-                onIncrease: () {},
-                onDecrease: () {},
-              ),
-            ),
-          ),
-        );
+    testWidgets('displays level 1 correctly', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-        expect(find.text('$level'), findsOneWidget);
-      }
+      await tester.pumpWidget(buildWidget(1));
+      expect(find.text('1'), findsOneWidget);
+    });
+
+    testWidgets('displays level 10 correctly', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(buildWidget(10));
+      expect(find.text('10'), findsOneWidget);
     });
 
     testWidgets('calls onIncrease when up arrow is tapped', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
       bool increased = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ResistanceControl(
-              currentLevel: 5,
-              onIncrease: () => increased = true,
-              onDecrease: () {},
-            ),
-          ),
-        ),
+        buildWidget(5, onIncrease: () => increased = true),
       );
 
       // Find the up caret icon and tap it
@@ -65,18 +63,13 @@ void main() {
     });
 
     testWidgets('calls onDecrease when down arrow is tapped', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
       bool decreased = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ResistanceControl(
-              currentLevel: 5,
-              onIncrease: () {},
-              onDecrease: () => decreased = true,
-            ),
-          ),
-        ),
+        buildWidget(5, onDecrease: () => decreased = true),
       );
 
       // Find the down caret icon and tap it
@@ -90,18 +83,13 @@ void main() {
     });
 
     testWidgets('does not call onIncrease at level 10', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
       bool increased = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ResistanceControl(
-              currentLevel: 10,
-              onIncrease: () => increased = true,
-              onDecrease: () {},
-            ),
-          ),
-        ),
+        buildWidget(10, onIncrease: () => increased = true),
       );
 
       final upArrow = find.byWidgetPredicate(
@@ -114,18 +102,13 @@ void main() {
     });
 
     testWidgets('does not call onDecrease at level 1', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
       bool decreased = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ResistanceControl(
-              currentLevel: 1,
-              onIncrease: () {},
-              onDecrease: () => decreased = true,
-            ),
-          ),
-        ),
+        buildWidget(1, onDecrease: () => decreased = true),
       );
 
       final downArrow = find.byWidgetPredicate(

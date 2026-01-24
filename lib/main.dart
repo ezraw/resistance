@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'screens/scan_screen.dart';
 import 'services/ble_service.dart';
+import 'services/workout_service.dart';
+import 'services/hr_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,10 +22,14 @@ class ResistanceApp extends StatefulWidget {
 
 class _ResistanceAppState extends State<ResistanceApp> {
   final BleService _bleService = BleService();
+  final WorkoutService _workoutService = WorkoutService();
+  final HrService _hrService = HrService();
 
   @override
   void dispose() {
     _bleService.dispose();
+    _workoutService.dispose();
+    _hrService.dispose();
     super.dispose();
   }
 
@@ -39,7 +45,11 @@ class _ResistanceAppState extends State<ResistanceApp> {
         ),
         useMaterial3: true,
       ),
-      home: ScanScreen(bleService: _bleService),
+      home: ScanScreen(
+        bleService: _bleService,
+        workoutService: _workoutService,
+        hrService: _hrService,
+      ),
     );
   }
 }

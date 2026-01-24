@@ -2,12 +2,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../services/ble_service.dart';
+import '../services/workout_service.dart';
+import '../services/hr_service.dart';
 import 'home_screen.dart';
 
 class ScanScreen extends StatefulWidget {
   final BleService bleService;
+  final WorkoutService workoutService;
+  final HrService hrService;
 
-  const ScanScreen({super.key, required this.bleService});
+  const ScanScreen({
+    super.key,
+    required this.bleService,
+    required this.workoutService,
+    required this.hrService,
+  });
 
   @override
   State<ScanScreen> createState() => _ScanScreenState();
@@ -113,7 +122,11 @@ class _ScanScreenState extends State<ScanScreen> {
   void _navigateToHome() {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => HomeScreen(bleService: widget.bleService),
+        builder: (context) => HomeScreen(
+          bleService: widget.bleService,
+          workoutService: widget.workoutService,
+          hrService: widget.hrService,
+        ),
       ),
     );
   }

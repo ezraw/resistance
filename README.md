@@ -10,19 +10,34 @@ When using a Zwift Ride with Kickr Core 2, there's no way to adjust trainer resi
 
 A minimal mobile app with two buttons (up/down) and a level display (1-10) that connects directly to the Kickr Core 2 via Bluetooth FTMS protocol.
 
-## Features (MVP)
+## Features
 
+### Resistance Control
 - Connect to Kickr Core 2 via Bluetooth
 - Display current resistance level (1-10)
 - Increase/decrease resistance with large tap targets
 - Auto-reconnect to previously paired trainer
-- Simple, distraction-free UI for workout use
+- Color gradient feedback (green → yellow → orange → red)
+- Smooth wave animations on level changes
+
+### Workout Timer
+- Start/pause/resume/restart/finish controls
+- Elapsed time display (MM:SS or HH:MM:SS)
+- Stats bar overlay during active workout
+- Workout summary screen with total duration
+
+### Heart Rate Monitor
+- Connect BLE heart rate monitors (Polar, Wahoo, etc.)
+- Real-time heart rate display with pulsing heart icon
+- Average and max HR tracking
+- Tap to connect HR monitor anytime during workout
 
 ## Future Enhancements
 
 - Zwift Ride handlebar control integration (use shift buttons to adjust resistance)
 - Live power/cadence/speed display
 - Preset resistance profiles
+- Workout history and trends
 - Android support
 
 ## Technical Details
@@ -52,14 +67,22 @@ A minimal mobile app with two buttons (up/down) and a level display (1-10) that 
 
 ```
 lib/
-├── main.dart                 # App entry point
+├── main.dart                      # App entry point
 ├── screens/
-│   ├── home_screen.dart      # Main resistance control UI
-│   └── scan_screen.dart      # Device scanning/connection
+│   ├── home_screen.dart           # Main resistance control UI
+│   ├── scan_screen.dart           # Device scanning/connection
+│   ├── workout_summary_screen.dart # Post-workout stats
+│   └── hr_scan_sheet.dart         # HR monitor discovery sheet
 ├── services/
-│   └── ble_service.dart      # Bluetooth FTMS communication
+│   ├── ble_service.dart           # Bluetooth FTMS communication
+│   ├── workout_service.dart       # Workout timer and state
+│   └── hr_service.dart            # Heart rate monitor BLE
 └── widgets/
-    └── resistance_control.dart  # Up/Down/Level widget
+    ├── resistance_control.dart    # Up/Down/Level widget
+    ├── workout_stats_bar.dart     # Timer + HR display bar
+    ├── workout_controls.dart      # Start/Pause/Finish buttons
+    ├── workout_timer_display.dart # Formatted elapsed time
+    └── heart_rate_display.dart    # BPM with heart icon
 ```
 
 ## License

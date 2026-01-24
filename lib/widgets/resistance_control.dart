@@ -193,7 +193,13 @@ class _ResistanceControlState extends State<ResistanceControl>
             SafeArea(
               child: Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+                  // Extra bottom padding to accommodate workout controls overlay
+                  padding: const EdgeInsets.only(
+                    left: 40,
+                    right: 40,
+                    top: 60,
+                    bottom: 100,
+                  ),
                   child: _buildControlPanel(displayColor),
                 ),
               ),
