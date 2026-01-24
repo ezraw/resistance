@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2026-01-24
+
+### Security
+- **Secure device ID storage**: BLE device IDs now stored in iOS Keychain via `flutter_secure_storage` instead of plaintext SharedPreferences
+- **Debug logging**: Replaced `print()` with `debugPrint()` throughout BLE services - logs no longer appear in release builds
+
+### Dependencies
+- Added `flutter_secure_storage: ^9.2.2` for secure credential storage
+
 ## [0.3.0] - 2026-01-24
 
 ### Added

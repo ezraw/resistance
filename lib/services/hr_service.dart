@@ -1,6 +1,7 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Heart Rate Service UUIDs (Bluetooth SIG standard)
 class HrUuids {
@@ -57,7 +58,7 @@ class HrService {
           .first
           .timeout(const Duration(seconds: 5));
     } catch (e) {
-      print('Bluetooth not ready for HR scan: $e');
+      debugPrint('Bluetooth not ready for HR scan: $e');
       _updateState(HrConnectionState.error);
       return const Stream.empty();
     }
@@ -70,7 +71,7 @@ class HrService {
         timeout: const Duration(seconds: 15),
       );
     } catch (e) {
-      print('HR scan failed: $e');
+      debugPrint('HR scan failed: $e');
       _updateState(HrConnectionState.error);
     }
 
@@ -114,7 +115,7 @@ class HrService {
       _updateState(HrConnectionState.connected);
       return true;
     } catch (e) {
-      print('HR connection error: $e');
+      debugPrint('HR connection error: $e');
       _updateState(HrConnectionState.error);
       return false;
     }
@@ -132,7 +133,7 @@ class HrService {
       try {
         await _connectedDevice!.disconnect();
       } catch (e) {
-        print('HR disconnect error: $e');
+        debugPrint('HR disconnect error: $e');
       }
       _connectedDevice = null;
     }
@@ -211,7 +212,7 @@ class HrService {
       }
 
       if (hrService == null) {
-        print('Heart Rate service not found');
+        debugPrint('Heart Rate service not found');
         return false;
       }
 
@@ -230,13 +231,13 @@ class HrService {
       }
 
       if (_hrMeasurementCharacteristic == null) {
-        print('HR Measurement characteristic not found');
+        debugPrint('HR Measurement characteristic not found');
         return false;
       }
 
       return true;
     } catch (e) {
-      print('Error setting up HR measurement: $e');
+      debugPrint('Error setting up HR measurement: $e');
       return false;
     }
   }
@@ -282,12 +283,12 @@ class HrService {
   }
 
   Future<void> _saveLastDevice(String deviceId) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_lastDeviceKey, deviceId);
+    const storage = FlutterSecureStorage();
+    await storage.write(key: _lastDeviceKey, value: deviceId);
   }
 
   Future<String?> _getLastDeviceId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_lastDeviceKey);
+    const storage = FlutterSecureStorage();
+    return await storage.read(key: _lastDeviceKey);
   }
 }

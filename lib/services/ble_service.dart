@@ -1,6 +1,7 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// FTMS (Fitness Machine Service) UUIDs
 class FtmsUuids {
@@ -75,7 +76,7 @@ class BleService {
           .first
           .timeout(const Duration(seconds: 5));
     } catch (e) {
-      print('Bluetooth not ready: $e');
+      debugPrint('Bluetooth not ready: $e');
       _updateState(TrainerConnectionState.error);
       return const Stream.empty();
     }
@@ -88,7 +89,7 @@ class BleService {
         timeout: const Duration(seconds: 15),
       );
     } catch (e) {
-      print('Scan failed: $e');
+      debugPrint('Scan failed: $e');
       _updateState(TrainerConnectionState.error);
     }
 
@@ -132,7 +133,7 @@ class BleService {
       _updateState(TrainerConnectionState.connected);
       return true;
     } catch (e) {
-      print('Connection error: $e');
+      debugPrint('Connection error: $e');
       _updateState(TrainerConnectionState.error);
       return false;
     }
@@ -149,7 +150,7 @@ class BleService {
       try {
         await _connectedDevice!.disconnect();
       } catch (e) {
-        print('Disconnect error: $e');
+        debugPrint('Disconnect error: $e');
       }
       _connectedDevice = null;
     }
@@ -169,7 +170,7 @@ class BleService {
           .first
           .timeout(const Duration(seconds: 5));
     } catch (e) {
-      print('Bluetooth not ready for auto-connect: $e');
+      debugPrint('Bluetooth not ready for auto-connect: $e');
       return false;
     }
 
@@ -195,7 +196,7 @@ class BleService {
         timeout: const Duration(seconds: 10),
       );
     } catch (e) {
-      print('Auto-connect scan failed: $e');
+      debugPrint('Auto-connect scan failed: $e');
       _updateState(TrainerConnectionState.disconnected);
       return false;
     }
@@ -246,7 +247,7 @@ class BleService {
       _resistanceLevelController.add(level);
       return true;
     } catch (e) {
-      print('Error setting resistance: $e');
+      debugPrint('Error setting resistance: $e');
       return false;
     }
   }
@@ -288,7 +289,7 @@ class BleService {
       }
 
       if (ftmsService == null) {
-        print('FTMS service not found');
+        debugPrint('FTMS service not found');
         return false;
       }
 
@@ -306,13 +307,13 @@ class BleService {
       }
 
       if (_controlPointCharacteristic == null) {
-        print('Control point characteristic not found');
+        debugPrint('Control point characteristic not found');
         return false;
       }
 
       return true;
     } catch (e) {
-      print('Error setting up FTMS: $e');
+      debugPrint('Error setting up FTMS: $e');
       return false;
     }
   }
@@ -328,7 +329,7 @@ class BleService {
       _hasControl = true;
       return true;
     } catch (e) {
-      print('Error requesting control: $e');
+      debugPrint('Error requesting control: $e');
       return false;
     }
   }
@@ -346,12 +347,12 @@ class BleService {
   }
 
   Future<void> _saveLastDevice(String deviceId) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_lastDeviceKey, deviceId);
+    const storage = FlutterSecureStorage();
+    await storage.write(key: _lastDeviceKey, value: deviceId);
   }
 
   Future<String?> _getLastDeviceId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_lastDeviceKey);
+    const storage = FlutterSecureStorage();
+    return await storage.read(key: _lastDeviceKey);
   }
 }
