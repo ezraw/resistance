@@ -92,8 +92,10 @@ class _HrScanSheetState extends State<HrScanSheet> {
   }
 
   void _onConnectionStateChanged(HrConnectionState state) {
-    if (state == HrConnectionState.connected && mounted) {
-      Navigator.of(context).pop();
+    // Note: Sheet dismissal is handled in _connectToDevice on success.
+    // We only need to update UI state here for connecting indicator.
+    if (mounted) {
+      setState(() {});
     }
   }
 

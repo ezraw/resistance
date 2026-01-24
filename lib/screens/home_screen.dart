@@ -331,6 +331,17 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
+          // HR indicator (top-right) - only show when not in workout
+          if (!isWorkoutInProgress)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 8,
+              right: 16,
+              child: GestureDetector(
+                onTap: _openHrScanSheet,
+                child: _buildHrIndicator(),
+              ),
+            ),
+
           // Workout controls (bottom)
           Positioned(
             bottom: MediaQuery.of(context).padding.bottom + 16,
@@ -373,6 +384,34 @@ class _HomeScreenState extends State<HomeScreen> {
             widget.bleService.isConnected ? 'Connected' : 'Disconnected',
             style: const TextStyle(
               color: Colors.white,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHrIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _hrConnected ? Icons.favorite : Icons.favorite_border,
+            color: _hrConnected ? Colors.red : Colors.white.withValues(alpha: 0.7),
+            size: 16,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            _hrConnected && _heartRate != null ? '$_heartRate bpm' : 'HR',
+            style: TextStyle(
+              color: _hrConnected ? Colors.white : Colors.white.withValues(alpha: 0.7),
               fontSize: 12,
             ),
           ),

@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2026-01-24
+
+### Fixed
+- **Black screen after HR connection**: Fixed critical bug where connecting to HR monitor would cause black screen. Root cause was duplicate `Navigator.pop()` calls in HR scan sheet.
+
+### Added
+- **HR connection before workout**: Heart rate monitor can now be connected from idle screen (top-right button) before starting a workout, not just during active workout.
+- **Confetti celebration**: Celebratory confetti animation plays when workout summary screen appears.
+
+### Changed
+- HR scan sheet now only dismisses on successful connection from `_connectToDevice`, not from connection state listener.
+
+### Dependencies
+- Added `confetti: ^0.7.0` for workout completion animation
+
 ## [0.2.0] - 2026-01-24
 
 ### Added

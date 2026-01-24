@@ -12,6 +12,7 @@ dependencies:
   flutter_blue_plus: ^1.35.0
   shared_preferences: ^2.3.0
   font_awesome_flutter: ^10.6.0
+  confetti: ^0.7.0
 
 dev_dependencies:
   flutter_test:

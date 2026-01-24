@@ -28,9 +28,10 @@ A minimal mobile app with two buttons (up/down) and a level display (1-10) that 
 
 ### Heart Rate Monitor
 - Connect BLE heart rate monitors (Polar, Wahoo, etc.)
+- Connect before or during workout (HR button in top-right when idle)
 - Real-time heart rate display with pulsing heart icon
 - Average and max HR tracking
-- Tap to connect HR monitor anytime during workout
+- Confetti celebration on workout completion
 
 ## Future Enhancements
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:confetti/confetti.dart';
 import '../services/workout_service.dart';
 import '../services/ble_service.dart';
 
@@ -18,15 +19,22 @@ class WorkoutSummaryScreen extends StatefulWidget {
 }
 
 class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
+  late ConfettiController _confettiController;
+
   @override
   void initState() {
     super.initState();
     // Restore system UI for summary screen
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+    // Initialize and start confetti animation
+    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+    _confettiController.play();
   }
 
   @override
   void dispose() {
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -57,19 +65,22 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              const Spacer(),
+      body: Stack(
+        children: [
+          // Main content
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  const Spacer(),
 
-              // Title
-              const Icon(
-                Icons.emoji_events,
-                size: 80,
-                color: Color(0xFFFFD700),
-              ),
+                  // Title
+                  const Icon(
+                    Icons.emoji_events,
+                    size: 80,
+                    color: Color(0xFFFFD700),
+                  ),
               const SizedBox(height: 16),
               const Text(
                 'Workout Complete!',
@@ -168,6 +179,29 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
             ],
           ),
         ),
+          ),
+
+          // Confetti animation from top center
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              colors: const [
+                Colors.red,
+                Colors.orange,
+                Colors.yellow,
+                Colors.green,
+                Colors.blue,
+                Colors.purple,
+                Colors.pink,
+              ],
+              numberOfParticles: 30,
+              gravity: 0.2,
+            ),
+          ),
+        ],
       ),
     );
   }
