@@ -26,20 +26,20 @@ void main() {
       expect(find.text('5'), findsOneWidget);
     });
 
-    testWidgets('displays level 1 correctly', (WidgetTester tester) async {
+    testWidgets('displays level 0 correctly', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(400, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      await tester.pumpWidget(buildWidget(1));
-      expect(find.text('1'), findsOneWidget);
+      await tester.pumpWidget(buildWidget(0));
+      expect(find.text('0'), findsOneWidget);
     });
 
-    testWidgets('displays level 10 correctly', (WidgetTester tester) async {
+    testWidgets('displays level 100 correctly', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(400, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      await tester.pumpWidget(buildWidget(10));
-      expect(find.text('10'), findsOneWidget);
+      await tester.pumpWidget(buildWidget(100));
+      expect(find.text('100'), findsOneWidget);
     });
 
     testWidgets('calls onIncrease when up arrow is tapped', (WidgetTester tester) async {
@@ -82,14 +82,14 @@ void main() {
       expect(decreased, isTrue);
     });
 
-    testWidgets('does not call onIncrease at level 10', (WidgetTester tester) async {
+    testWidgets('does not call onIncrease at level 100', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(400, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       bool increased = false;
 
       await tester.pumpWidget(
-        buildWidget(10, onIncrease: () => increased = true),
+        buildWidget(100, onIncrease: () => increased = true),
       );
 
       final upArrow = find.byWidgetPredicate(
@@ -101,14 +101,14 @@ void main() {
       expect(increased, isFalse);
     });
 
-    testWidgets('does not call onDecrease at level 1', (WidgetTester tester) async {
+    testWidgets('does not call onDecrease at level 0', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(400, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       bool decreased = false;
 
       await tester.pumpWidget(
-        buildWidget(1, onDecrease: () => decreased = true),
+        buildWidget(0, onDecrease: () => decreased = true),
       );
 
       final downArrow = find.byWidgetPredicate(

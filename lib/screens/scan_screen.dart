@@ -31,6 +31,8 @@ class _ScanScreenState extends State<ScanScreen> {
   StreamSubscription<TrainerConnectionState>? _connectionSubscription;
   bool _isScanning = false;
   bool _triedAutoConnect = false;
+  bool _hasNavigated = false;
+  bool _isAutoConnecting = true;  // Start in auto-connect mode
   String? _errorMessage;
 
   @override
@@ -55,6 +57,9 @@ class _ScanScreenState extends State<ScanScreen> {
     if (success && mounted) {
       _navigateToHome();
     } else if (mounted) {
+      setState(() {
+        _isAutoConnecting = false;
+      });
       _startScan();
     }
   }
@@ -123,6 +128,10 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   void _navigateToHome() {
+    // Guard against multiple navigation calls
+    if (_hasNavigated) return;
+    _hasNavigated = true;
+
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) => HomeScreen(
@@ -137,6 +146,34 @@ class _ScanScreenState extends State<ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Show loading screen during initial auto-connect attempt
+    if (_isAutoConnecting) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.bluetooth_searching,
+                size: 80,
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+              ),
+              const SizedBox(height: 24),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 24),
+              const Text(
+                'Looking for your trainer...',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Find Trainer'),

@@ -22,13 +22,12 @@ class ResistanceControl extends StatefulWidget {
 class _ResistanceControlState extends State<ResistanceControl>
     with TickerProviderStateMixin {
   late AnimationController _pulseController;
-  late AnimationController _waveController;
+  late AnimationController _fadeController;
   late Animation<double> _pulseAnimation;
-  late Animation<double> _waveAnimation;
+  late Animation<double> _fadeAnimation;
 
-  Color _previousColor = Colors.green;
-  Color _targetColor = Colors.green;
-  bool _isIncreasing = true;
+  Color _previousColor = const Color(0xFF4CAF50);
+  Color _targetColor = const Color(0xFF4CAF50);
 
   @override
   void initState() {
@@ -48,79 +47,93 @@ class _ResistanceControlState extends State<ResistanceControl>
       }
     });
 
-    // Wave animation for color transitions
-    _waveController = AnimationController(
-      duration: const Duration(milliseconds: 350),
+    // Fade animation for color transitions (only on decade boundary crossings)
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _waveAnimation = CurvedAnimation(
-      parent: _waveController,
-      curve: Curves.easeOutCubic,
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
     );
 
     _previousColor = _getColorForLevel(widget.currentLevel);
     _targetColor = _previousColor;
   }
 
+  /// Get the decade (0-10) for a given level (0-100)
+  int _getDecade(int level) {
+    if (level >= 100) return 10;
+    return level ~/ 10;
+  }
+
   @override
   void didUpdateWidget(ResistanceControl oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.currentLevel != widget.currentLevel) {
-      // Capture current interpolated color if animation is in progress
-      if (_waveController.isAnimating) {
-        _previousColor = Color.lerp(_previousColor, _targetColor, _waveAnimation.value)!;
-      } else {
-        _previousColor = _getColorForLevel(oldWidget.currentLevel);
+      final oldDecade = _getDecade(oldWidget.currentLevel);
+      final newDecade = _getDecade(widget.currentLevel);
+
+      // Only animate color when crossing decade boundaries
+      if (oldDecade != newDecade) {
+        // Capture current interpolated color if animation is in progress
+        if (_fadeController.isAnimating) {
+          _previousColor = Color.lerp(_previousColor, _targetColor, _fadeAnimation.value)!;
+        } else {
+          _previousColor = _getColorForLevel(oldWidget.currentLevel);
+        }
+        _targetColor = _getColorForLevel(widget.currentLevel);
+        _fadeController.forward(from: 0);
       }
-      _targetColor = _getColorForLevel(widget.currentLevel);
-      _isIncreasing = widget.currentLevel > oldWidget.currentLevel;
-      _waveController.forward(from: 0);
     }
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
-    _waveController.dispose();
+    _fadeController.dispose();
     super.dispose();
   }
 
   Color _getColorForLevel(int level) {
-    // Gradient: green (1-2) → yellow (3-5) → orange (6-7) → red (8-10)
-    switch (level) {
-      case 1:
-        return const Color(0xFF4CAF50); // Green
-      case 2:
-        return const Color(0xFF8BC34A); // Light green
-      case 3:
-        return const Color(0xFFCDDC39); // Lime
-      case 4:
-        return const Color(0xFFFFEB3B); // Yellow
-      case 5:
-        return const Color(0xFFFFC107); // Amber
-      case 6:
-        return const Color(0xFFFF9800); // Orange
-      case 7:
-        return const Color(0xFFFF5722); // Deep orange
-      case 8:
-        return const Color(0xFFF44336); // Red
-      case 9:
-        return const Color(0xFFE53935); // Red darken
-      case 10:
-        return const Color(0xFFB71C1C); // Dark red
+    // Decade-based colors: 11 bands (0-9, 10-19, ... 90-99, 100)
+    final decade = _getDecade(level);
+    switch (decade) {
+      case 0:  // 0-9
+        return const Color(0xFF4CAF50);  // Green
+      case 1:  // 10-19
+        return const Color(0xFF8BC34A);  // Light Green
+      case 2:  // 20-29
+        return const Color(0xFFCDDC39);  // Lime
+      case 3:  // 30-39
+        return const Color(0xFFFFEB3B);  // Yellow
+      case 4:  // 40-49
+        return const Color(0xFFFFC107);  // Amber
+      case 5:  // 50-59
+        return const Color(0xFFFF9800);  // Orange
+      case 6:  // 60-69
+        return const Color(0xFFFF5722);  // Deep Orange
+      case 7:  // 70-79
+        return const Color(0xFFF44336);  // Red
+      case 8:  // 80-89
+        return const Color(0xFFE53935);  // Red Darken
+      case 9:  // 90-99
+        return const Color(0xFFC62828);  // Dark Red
+      case 10: // 100
+        return const Color(0xFFB71C1C);  // Darkest Red
       default:
         return const Color(0xFF4CAF50);
     }
   }
 
   void _handleIncrease() {
-    if (widget.currentLevel >= 10 || widget.isUpdating) return;
+    if (widget.currentLevel >= 100 || widget.isUpdating) return;
     _pulseController.forward(from: 0);
     widget.onIncrease();
   }
 
   void _handleDecrease() {
-    if (widget.currentLevel <= 1 || widget.isUpdating) return;
+    if (widget.currentLevel <= 0 || widget.isUpdating) return;
     _pulseController.forward(from: 0);
     widget.onDecrease();
   }
@@ -128,66 +141,28 @@ class _ResistanceControlState extends State<ResistanceControl>
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([_pulseAnimation, _waveAnimation]),
+      animation: Listenable.merge([_pulseAnimation, _fadeAnimation]),
       builder: (context, child) {
-        final waveProgress = _waveAnimation.value;
+        final fadeProgress = _fadeAnimation.value;
 
-        // Calculate the display color for UI elements (interpolated based on wave progress)
-        final displayColor = Color.lerp(_previousColor, _targetColor, waveProgress)!;
+        // Calculate the display color (interpolated during fade)
+        final displayColor = Color.lerp(_previousColor, _targetColor, fadeProgress)!;
 
         return Stack(
           children: [
-            // Base layer: previous color with pulse effect
+            // Background with fade transition
             Container(
               decoration: BoxDecoration(
                 gradient: RadialGradient(
                   center: Alignment.center,
                   radius: _pulseAnimation.value,
                   colors: [
-                    _previousColor,
-                    _previousColor.withValues(alpha: 0.8),
+                    displayColor,
+                    displayColor.withValues(alpha: 0.8),
                   ],
                 ),
               ),
             ),
-
-            // Wave overlay: new color sweeping in with gradient trail
-            if (waveProgress > 0 && waveProgress < 1)
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: _isIncreasing ? Alignment.bottomCenter : Alignment.topCenter,
-                      end: _isIncreasing ? Alignment.topCenter : Alignment.bottomCenter,
-                      colors: [
-                        _targetColor,
-                        _targetColor,
-                        _targetColor.withValues(alpha: 0.0),
-                      ],
-                      stops: [
-                        0.0,
-                        (waveProgress - 0.08).clamp(0.0, 1.0),  // Sharp edge
-                        waveProgress.clamp(0.0, 1.0),           // Short fade
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-            // Final state: target color when animation completes
-            if (waveProgress >= 1)
-              Container(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: Alignment.center,
-                    radius: _pulseAnimation.value,
-                    colors: [
-                      _targetColor,
-                      _targetColor.withValues(alpha: 0.8),
-                    ],
-                  ),
-                ),
-              ),
 
             // UI content layer
             SafeArea(
@@ -242,7 +217,7 @@ class _ResistanceControlState extends State<ResistanceControl>
           _buildButton(
             icon: FontAwesomeIcons.caretUp,
             onTap: _handleIncrease,
-            isEnabled: widget.currentLevel < 10 && !widget.isUpdating,
+            isEnabled: widget.currentLevel < 100 && !widget.isUpdating,
             contentColor: contentColor,
             isTop: true,
           ),
@@ -253,7 +228,7 @@ class _ResistanceControlState extends State<ResistanceControl>
             child: Text(
               '${widget.currentLevel}',
               style: TextStyle(
-                fontSize: 100,
+                fontSize: widget.currentLevel >= 100 ? 80 : 100,
                 fontWeight: FontWeight.w700,
                 fontFamily: '.SF Pro Rounded',
                 color: contentColor,
@@ -266,7 +241,7 @@ class _ResistanceControlState extends State<ResistanceControl>
           _buildButton(
             icon: FontAwesomeIcons.caretDown,
             onTap: _handleDecrease,
-            isEnabled: widget.currentLevel > 1 && !widget.isUpdating,
+            isEnabled: widget.currentLevel > 0 && !widget.isUpdating,
             contentColor: contentColor,
             isTop: false,
           ),
@@ -303,4 +278,3 @@ class _ResistanceControlState extends State<ResistanceControl>
     );
   }
 }
-

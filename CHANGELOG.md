@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-01-25
+
+### Changed
+- **Resistance range**: Changed from 1-10 levels to 0-100% with 5% increments
+- **Auto-start at 0%**: Trainer automatically sets to 0% resistance on connection
+- **Color scheme**: New decade-based color bands (11 colors: 0-9%, 10-19%, ... 90-99%, 100%)
+- **Animation style**: Replaced directional wave animation with smooth cross-fade (only triggers at decade boundaries)
+- **Startup screen**: New "Looking for your trainer..." loading screen during auto-connect attempt
+
+### Added
+- **Screen wakelock**: Screen stays awake during use to prevent interruption during workouts
+
+### Fixed
+- **Double navigation**: Fixed screen sliding multiple times when connecting to trainer (duplicate navigation calls)
+- **Resistance display bounce**: Fixed display briefly showing intermediate values during rapid button tapping
+
+### Dependencies
+- Added `wakelock_plus: ^1.2.8` for screen wake management
+
 ## [0.3.1] - 2026-01-24
 
 ### Security

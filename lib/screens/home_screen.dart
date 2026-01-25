@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../services/ble_service.dart';
 import '../services/workout_service.dart';
 import '../services/hr_service.dart';
@@ -40,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
   StreamSubscription<int>? _hrSubscription;
   Timer? _debounceTimer;
   int _pendingLevel = 0;
+  bool _hasPendingUpdate = false;
 
   WorkoutState _workoutState = WorkoutState.idle;
   Duration _elapsed = Duration.zero;
@@ -63,12 +65,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Hide status bar for immersive experience
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+    // Keep screen awake during use
+    WakelockPlus.enable();
   }
 
   @override
   void dispose() {
     // Restore status bar when leaving
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // Allow screen to sleep again
+    WakelockPlus.disable();
     _connectionSubscription?.cancel();
     _resistanceSubscription?.cancel();
     _workoutStateSubscription?.cancel();
@@ -128,6 +135,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onResistanceLevelChanged(int level) {
+    // Ignore BLE confirmations while we have a pending debounced update
+    // to prevent the display from bouncing during rapid tapping
+    if (_hasPendingUpdate) return;
+
     if (mounted) {
       setState(() {
         _currentLevel = level;
@@ -196,14 +207,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _increaseResistance() {
-    if (_currentLevel >= 10) return;
+    if (_currentLevel >= 100) return;
 
     // Immediate haptic feedback (light is faster than medium)
     HapticFeedback.lightImpact();
 
     // Immediate UI update
     setState(() {
-      _currentLevel = (_currentLevel + 1).clamp(1, 10);
+      _currentLevel = (_currentLevel + 5).clamp(0, 100);
     });
 
     // Debounced BLE update - wait for rapid taps to finish
@@ -211,14 +222,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _decreaseResistance() {
-    if (_currentLevel <= 1) return;
+    if (_currentLevel <= 0) return;
 
     // Immediate haptic feedback (light is faster than medium)
     HapticFeedback.lightImpact();
 
     // Immediate UI update
     setState(() {
-      _currentLevel = (_currentLevel - 1).clamp(1, 10);
+      _currentLevel = (_currentLevel - 5).clamp(0, 100);
     });
 
     // Debounced BLE update - wait for rapid taps to finish
@@ -227,6 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _scheduleBleUpdate(int level) {
     _pendingLevel = level;
+    _hasPendingUpdate = true;
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 150), () {
       _sendBleUpdate(_pendingLevel);
@@ -235,6 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _sendBleUpdate(int level) async {
     final success = await widget.bleService.setResistanceLevel(level);
+    _hasPendingUpdate = false;
     if (!success && mounted) {
       // Revert to actual trainer level on failure
       setState(() {

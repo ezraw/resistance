@@ -8,17 +8,19 @@ When using a Zwift Ride with Kickr Core 2, there's no way to adjust trainer resi
 
 ## Solution
 
-A minimal mobile app with two buttons (up/down) and a level display (1-10) that connects directly to the Kickr Core 2 via Bluetooth FTMS protocol.
+A minimal mobile app with two buttons (up/down) and a percentage display (0-100%) that connects directly to the Kickr Core 2 via Bluetooth FTMS protocol.
 
 ## Features
 
 ### Resistance Control
 - Connect to Kickr Core 2 via Bluetooth
-- Display current resistance level (1-10)
+- Display current resistance (0-100% in 5% increments)
 - Increase/decrease resistance with large tap targets
 - Auto-reconnect to previously paired trainer
-- Color gradient feedback (green → yellow → orange → red)
-- Smooth wave animations on level changes
+- Auto-set to 0% on connection
+- Decade-based color feedback (11 colors from green to dark red)
+- Smooth fade animations when crossing decade boundaries
+- Screen stays awake during use
 
 ### Workout Timer
 - Start/pause/resume/restart/finish controls

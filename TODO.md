@@ -17,7 +17,7 @@
 
 ## UX Enhancements
 
-- [ ] **Finer resistance control**: Change from 10 levels (10% jumps) to 20 levels with 0.5 increments (5% jumps)
+- [x] **Finer resistance control**: Changed to 0-100% with 5% increments and decade-based color bands
 
 ## HealthKit Enhancements
 

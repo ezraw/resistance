@@ -41,7 +41,7 @@ class BleService {
   final _resistanceLevelController = StreamController<int>.broadcast();
 
   TrainerConnectionState _currentState = TrainerConnectionState.disconnected;
-  int _currentResistanceLevel = 5;
+  int _currentResistanceLevel = 0;
   bool _hasControl = false;
 
   /// Stream of connection state changes
@@ -53,7 +53,7 @@ class BleService {
   /// Current connection state
   TrainerConnectionState get currentState => _currentState;
 
-  /// Current resistance level (1-10)
+  /// Current resistance level (0-100)
   int get currentResistanceLevel => _currentResistanceLevel;
 
   /// Whether currently connected to a trainer
@@ -131,6 +131,10 @@ class BleService {
       await _saveLastDevice(device.remoteId.str);
 
       _updateState(TrainerConnectionState.connected);
+
+      // Auto-set resistance to 0% on connection
+      await setResistanceLevel(0);
+
       return true;
     } catch (e) {
       debugPrint('Connection error: $e');
@@ -218,14 +222,14 @@ class BleService {
     return false;
   }
 
-  /// Set resistance level (1-10)
+  /// Set resistance level (0-100)
   Future<bool> setResistanceLevel(int level) async {
     if (!isConnected || _controlPointCharacteristic == null) {
       return false;
     }
 
     // Clamp level to valid range
-    level = level.clamp(1, 10);
+    level = level.clamp(0, 100);
 
     // Request control if we don't have it yet
     if (!_hasControl) {
@@ -233,9 +237,8 @@ class BleService {
       if (!gotControl) return false;
     }
 
-    // Convert level (1-10) to FTMS resistance value (10-100)
-    // FTMS uses 0.1 resolution, so level 5 = 50 (representing 50%)
-    final ftmsValue = level * 10;
+    // FTMS uses 0-100 directly (0.1 resolution, so 50 = 50%)
+    final ftmsValue = level;
 
     try {
       await _controlPointCharacteristic!.write(
@@ -252,16 +255,16 @@ class BleService {
     }
   }
 
-  /// Increase resistance by 1 level
+  /// Increase resistance by 5%
   Future<bool> increaseResistance() async {
-    if (_currentResistanceLevel >= 10) return true;
-    return await setResistanceLevel(_currentResistanceLevel + 1);
+    if (_currentResistanceLevel >= 100) return true;
+    return await setResistanceLevel(_currentResistanceLevel + 5);
   }
 
-  /// Decrease resistance by 1 level
+  /// Decrease resistance by 5%
   Future<bool> decreaseResistance() async {
-    if (_currentResistanceLevel <= 1) return true;
-    return await setResistanceLevel(_currentResistanceLevel - 1);
+    if (_currentResistanceLevel <= 0) return true;
+    return await setResistanceLevel(_currentResistanceLevel - 5);
   }
 
   /// Clean up resources
