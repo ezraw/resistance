@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import '../services/workout_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/accessibility.dart';
+import 'arcade/arcade_button.dart';
+import 'arcade/pixel_icon.dart';
 
-/// Renders workout control buttons based on current workout state
-class WorkoutControls extends StatelessWidget {
+/// Renders workout control buttons based on current workout state.
+/// The START button throbs when idle to invite interaction.
+class WorkoutControls extends StatefulWidget {
   final WorkoutState workoutState;
   final VoidCallback onStart;
   final VoidCallback onPause;
@@ -21,6 +26,47 @@ class WorkoutControls extends StatelessWidget {
   });
 
   @override
+  State<WorkoutControls> createState() => _WorkoutControlsState();
+}
+
+class _WorkoutControlsState extends State<WorkoutControls>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _throbController;
+  late Animation<double> _throbAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _throbController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+    _throbAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(parent: _throbController, curve: Curves.easeInOut),
+    );
+    if (widget.workoutState == WorkoutState.idle) {
+      _throbController.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(WorkoutControls oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.workoutState == WorkoutState.idle && !_throbController.isAnimating) {
+      _throbController.repeat(reverse: true);
+    } else if (widget.workoutState != WorkoutState.idle && _throbController.isAnimating) {
+      _throbController.stop();
+      _throbController.reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _throbController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -28,111 +74,73 @@ class WorkoutControls extends StatelessWidget {
         alignment: WrapAlignment.center,
         spacing: 12,
         runSpacing: 12,
-        children: _buildButtons(),
+        children: _buildButtons(context),
       ),
     );
   }
 
-  List<Widget> _buildButtons() {
-    switch (workoutState) {
+  List<Widget> _buildButtons(BuildContext context) {
+    final reduceMotion = Accessibility.reduceMotion(context);
+
+    switch (widget.workoutState) {
       case WorkoutState.idle:
+        final button = ArcadeButton(
+          label: 'START',
+          icon: const PixelIcon.play(size: 16, color: AppColors.nightPlum),
+          onTap: widget.onStart,
+          scheme: ArcadeButtonScheme.gold,
+        );
+        if (reduceMotion) return [button];
         return [
-          _WorkoutButton(
-            icon: Icons.play_arrow_rounded,
-            label: 'Start',
-            onTap: onStart,
-            isPrimary: true,
+          AnimatedBuilder(
+            animation: _throbAnimation,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _throbAnimation.value,
+                child: child,
+              );
+            },
+            child: button,
           ),
         ];
 
       case WorkoutState.active:
-        // Only show Pause when running - Finish requires pausing first
         return [
-          _WorkoutButton(
-            icon: Icons.pause_rounded,
-            label: 'Pause',
-            onTap: onPause,
-            isPrimary: true,
+          ArcadeButton(
+            label: 'PAUSE',
+            icon: const PixelIcon.pause(size: 16, color: AppColors.white),
+            onTap: widget.onPause,
+            scheme: ArcadeButtonScheme.magenta,
+            minWidth: 200,
           ),
         ];
 
       case WorkoutState.paused:
         return [
-          _WorkoutButton(
-            icon: Icons.play_arrow_rounded,
-            label: 'Resume',
-            onTap: onResume,
-            isPrimary: true,
+          ArcadeButton(
+            label: 'RESUME',
+            icon: const PixelIcon.play(size: 16, color: AppColors.nightPlum),
+            onTap: widget.onResume,
+            scheme: ArcadeButtonScheme.gold,
           ),
-          _WorkoutButton(
-            icon: Icons.restart_alt_rounded,
-            label: 'Restart',
-            onTap: onRestart,
-            isPrimary: false,
+          ArcadeButton(
+            label: 'RESTART',
+            icon: const PixelIcon.restart(size: 16, color: AppColors.white),
+            onTap: widget.onRestart,
+            scheme: ArcadeButtonScheme.orange,
+            minWidth: 100,
           ),
-          _WorkoutButton(
-            icon: Icons.stop_rounded,
-            label: 'Finish',
-            onTap: onFinish,
-            isPrimary: false,
+          ArcadeButton(
+            label: 'FINISH',
+            icon: const PixelIcon.stop(size: 16, color: AppColors.white),
+            onTap: widget.onFinish,
+            scheme: ArcadeButtonScheme.red,
+            minWidth: 100,
           ),
         ];
 
       case WorkoutState.finished:
         return [];
     }
-  }
-}
-
-class _WorkoutButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool isPrimary;
-
-  const _WorkoutButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.isPrimary,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: isPrimary
-              ? Colors.white.withValues(alpha: 0.2)
-              : Colors.black.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: isPrimary ? 0.4 : 0.2),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 24,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

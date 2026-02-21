@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'ble_diagnostic_log.dart';
 
 /// FTMS (Fitness Machine Service) UUIDs
 class FtmsUuids {
@@ -19,23 +20,46 @@ class FtmsOpCodes {
   static const int responseCode = 0x80;
 }
 
+/// FTMS Control Point Result Codes
+class FtmsResultCodes {
+  static const int success = 0x01;
+  static const int opCodeNotSupported = 0x02;
+  static const int invalidParameter = 0x03;
+  static const int operationFailed = 0x04;
+  static const int controlNotPermitted = 0x05;
+}
+
+/// FTMS Machine Status codes
+class FtmsMachineStatus {
+  static const int reset = 0x01;
+  static const int controlPermissionLost = 0x0A;
+}
+
 /// Connection state for the trainer
 enum TrainerConnectionState {
   disconnected,
   scanning,
   connecting,
   connected,
+  degraded,
   error,
 }
 
 /// BLE Service for communicating with FTMS-compatible trainers
 class BleService {
   static const String _lastDeviceKey = 'last_device_id';
+  static const int _softRecoveryThreshold = 3;
+  static const int _fullReconnectThreshold = 6;
+  static const Duration _healthCheckInterval = Duration(seconds: 30);
+  static const Duration _healthCheckTimeout = Duration(seconds: 60);
 
   BluetoothDevice? _connectedDevice;
   BluetoothCharacteristic? _controlPointCharacteristic;
   StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
   StreamSubscription<List<ScanResult>>? _scanSubscription;
+  StreamSubscription<List<int>>? _indicationSubscription;
+  StreamSubscription<List<int>>? _statusSubscription;
+  Timer? _healthCheckTimer;
 
   final _connectionStateController = StreamController<TrainerConnectionState>.broadcast();
   final _resistanceLevelController = StreamController<int>.broadcast();
@@ -43,6 +67,14 @@ class BleService {
   TrainerConnectionState _currentState = TrainerConnectionState.disconnected;
   int _currentResistanceLevel = 0;
   bool _hasControl = false;
+
+  // Failure tracking
+  int _consecutiveWriteFailures = 0;
+  DateTime? _lastSuccessfulCommand;
+  bool _isRecovering = false;
+
+  /// Diagnostic log for BLE events
+  final BleDiagnosticLog diagnosticLog = BleDiagnosticLog();
 
   /// Stream of connection state changes
   Stream<TrainerConnectionState> get connectionState => _connectionStateController.stream;
@@ -56,8 +88,21 @@ class BleService {
   /// Current resistance level (0-100)
   int get currentResistanceLevel => _currentResistanceLevel;
 
-  /// Whether currently connected to a trainer
-  bool get isConnected => _currentState == TrainerConnectionState.connected;
+  /// Whether currently connected to a trainer (includes degraded state)
+  bool get isConnected =>
+      _currentState == TrainerConnectionState.connected ||
+      _currentState == TrainerConnectionState.degraded;
+
+  /// Whether the connection is in a degraded state
+  bool get isDegraded => _currentState == TrainerConnectionState.degraded;
+
+  /// Number of consecutive write failures (exposed for testing)
+  @visibleForTesting
+  int get consecutiveWriteFailures => _consecutiveWriteFailures;
+
+  /// Whether recovery is in progress (exposed for testing)
+  @visibleForTesting
+  bool get isRecovering => _isRecovering;
 
   /// Check if Bluetooth is available and on
   Future<bool> isBluetoothAvailable() async {
@@ -110,6 +155,8 @@ class BleService {
       _updateState(TrainerConnectionState.connecting);
       await stopScan();
 
+      diagnosticLog.log('Connecting', details: device.remoteId.str);
+
       await device.connect(timeout: const Duration(seconds: 10));
       _connectedDevice = device;
 
@@ -130,7 +177,16 @@ class BleService {
       // Save device ID for auto-reconnect
       await _saveLastDevice(device.remoteId.str);
 
+      // Reset failure tracking on fresh connection
+      _consecutiveWriteFailures = 0;
+      _lastSuccessfulCommand = DateTime.now();
+      _isRecovering = false;
+
       _updateState(TrainerConnectionState.connected);
+      diagnosticLog.log('Connected', details: device.remoteId.str);
+
+      // Start health check timer
+      _startHealthCheck();
 
       // Auto-set resistance to 0% on connection
       await setResistanceLevel(0);
@@ -138,6 +194,7 @@ class BleService {
       return true;
     } catch (e) {
       debugPrint('Connection error: $e');
+      diagnosticLog.log('Connection error', details: '$e');
       _updateState(TrainerConnectionState.error);
       return false;
     }
@@ -145,8 +202,17 @@ class BleService {
 
   /// Disconnect from current device
   Future<void> disconnect() async {
+    diagnosticLog.log('Disconnecting');
     _hasControl = false;
     _controlPointCharacteristic = null;
+    _consecutiveWriteFailures = 0;
+    _isRecovering = false;
+    _healthCheckTimer?.cancel();
+    _healthCheckTimer = null;
+    await _indicationSubscription?.cancel();
+    _indicationSubscription = null;
+    await _statusSubscription?.cancel();
+    _statusSubscription = null;
     await _connectionSubscription?.cancel();
     _connectionSubscription = null;
 
@@ -228,6 +294,12 @@ class BleService {
       return false;
     }
 
+    // Don't send commands during recovery
+    if (_isRecovering) {
+      diagnosticLog.log('Write skipped', details: 'Recovery in progress');
+      return false;
+    }
+
     // Clamp level to valid range
     level = level.clamp(0, 100);
 
@@ -251,6 +323,8 @@ class BleService {
       return true;
     } catch (e) {
       debugPrint('Error setting resistance: $e');
+      diagnosticLog.log('Write exception', details: 'level=$level error=$e');
+      _onWriteFailure();
       return false;
     }
   }
@@ -269,11 +343,18 @@ class BleService {
 
   /// Clean up resources
   void dispose() {
+    _healthCheckTimer?.cancel();
     _scanSubscription?.cancel();
     _connectionSubscription?.cancel();
+    _indicationSubscription?.cancel();
+    _statusSubscription?.cancel();
+    // Disconnect before closing streams to avoid adding events after close
+    _hasControl = false;
+    _controlPointCharacteristic = null;
+    _connectedDevice?.disconnect();
+    _connectedDevice = null;
     _connectionStateController.close();
     _resistanceLevelController.close();
-    disconnect();
   }
 
   // Private methods
@@ -293,31 +374,179 @@ class BleService {
 
       if (ftmsService == null) {
         debugPrint('FTMS service not found');
+        diagnosticLog.log('FTMS setup failed', details: 'Service not found');
         return false;
       }
 
-      // Find control point characteristic
+      // Find and subscribe to characteristics
       for (final char in ftmsService.characteristics) {
         if (char.uuid == FtmsUuids.controlPoint) {
           _controlPointCharacteristic = char;
 
-          // Enable indications for responses
+          // Enable indications and subscribe for responses
           if (char.properties.indicate) {
             await char.setNotifyValue(true);
+            _indicationSubscription = char.lastValueStream.listen(_onControlPointIndication);
+            diagnosticLog.log('FTMS indications subscribed');
           }
-          break;
+        } else if (char.uuid == FtmsUuids.status) {
+          // Subscribe to Machine Status characteristic
+          if (char.properties.notify || char.properties.indicate) {
+            await char.setNotifyValue(true);
+            _statusSubscription = char.lastValueStream.listen(_onMachineStatus);
+            diagnosticLog.log('FTMS machine status subscribed');
+          }
         }
       }
 
       if (_controlPointCharacteristic == null) {
         debugPrint('Control point characteristic not found');
+        diagnosticLog.log('FTMS setup failed', details: 'Control point not found');
         return false;
       }
 
+      diagnosticLog.log('FTMS setup complete');
       return true;
     } catch (e) {
       debugPrint('Error setting up FTMS: $e');
+      diagnosticLog.log('FTMS setup error', details: '$e');
       return false;
+    }
+  }
+
+  /// Handle FTMS Control Point indication responses
+  /// Format: byte 0 = 0x80 (response code), byte 1 = request op code, byte 2 = result code
+  void _onControlPointIndication(List<int> data) {
+    if (data.length < 3) return;
+    if (data[0] != FtmsOpCodes.responseCode) return;
+
+    final requestOpCode = data[1];
+    final resultCode = data[2];
+
+    diagnosticLog.log('Indication received',
+        details: 'opCode=0x${requestOpCode.toRadixString(16)} result=0x${resultCode.toRadixString(16)}');
+
+    if (resultCode == FtmsResultCodes.success) {
+      _onCommandSuccess();
+    } else if (resultCode == FtmsResultCodes.controlNotPermitted) {
+      diagnosticLog.log('Control not permitted', details: 'Will re-request on next command');
+      _hasControl = false;
+      _onWriteFailure();
+    } else {
+      diagnosticLog.log('Command failed',
+          details: 'opCode=0x${requestOpCode.toRadixString(16)} result=0x${resultCode.toRadixString(16)}');
+      _onWriteFailure();
+    }
+  }
+
+  /// Handle FTMS Machine Status notifications
+  void _onMachineStatus(List<int> data) {
+    if (data.isEmpty) return;
+
+    final statusCode = data[0];
+    diagnosticLog.log('Machine status', details: '0x${statusCode.toRadixString(16)}');
+
+    if (statusCode == FtmsMachineStatus.reset ||
+        statusCode == FtmsMachineStatus.controlPermissionLost) {
+      diagnosticLog.log('Control lost via machine status',
+          details: 'status=0x${statusCode.toRadixString(16)}');
+      _hasControl = false;
+    }
+  }
+
+  void _onCommandSuccess() {
+    _consecutiveWriteFailures = 0;
+    _lastSuccessfulCommand = DateTime.now();
+
+    // Recover from degraded state
+    if (_currentState == TrainerConnectionState.degraded) {
+      diagnosticLog.log('Recovered from degraded state');
+      _isRecovering = false;
+      _updateState(TrainerConnectionState.connected);
+    }
+  }
+
+  void _onWriteFailure() {
+    _consecutiveWriteFailures++;
+    diagnosticLog.log('Write failure',
+        details: 'consecutive=$_consecutiveWriteFailures');
+
+    if (_consecutiveWriteFailures >= _fullReconnectThreshold) {
+      _attemptFullReconnect();
+    } else if (_consecutiveWriteFailures >= _softRecoveryThreshold &&
+        _currentState != TrainerConnectionState.degraded) {
+      _attemptSoftRecovery();
+    }
+  }
+
+  Future<void> _attemptSoftRecovery() async {
+    if (_isRecovering) return;
+    _isRecovering = true;
+
+    diagnosticLog.log('Soft recovery started');
+    _updateState(TrainerConnectionState.degraded);
+
+    // Reset control and re-request
+    _hasControl = false;
+    final gotControl = await _requestControl();
+
+    if (gotControl) {
+      // Resend current resistance level as a probe
+      diagnosticLog.log('Soft recovery', details: 'Resending resistance=$_currentResistanceLevel');
+      try {
+        await _controlPointCharacteristic!.write(
+          [FtmsOpCodes.setTargetResistance, _currentResistanceLevel],
+          withoutResponse: false,
+        );
+      } catch (e) {
+        diagnosticLog.log('Soft recovery write failed', details: '$e');
+      }
+    }
+
+    _isRecovering = false;
+  }
+
+  Future<void> _attemptFullReconnect() async {
+    if (_isRecovering) return;
+    _isRecovering = true;
+
+    diagnosticLog.log('Full reconnect started',
+        details: 'failures=$_consecutiveWriteFailures');
+    _updateState(TrainerConnectionState.degraded);
+
+    // Disconnect and try auto-connect
+    final savedLevel = _currentResistanceLevel;
+    await disconnect();
+
+    final reconnected = await tryAutoConnect();
+    if (reconnected) {
+      diagnosticLog.log('Full reconnect succeeded');
+      // Restore previous resistance level
+      await setResistanceLevel(savedLevel);
+    } else {
+      diagnosticLog.log('Full reconnect failed');
+    }
+    // _isRecovering is reset by disconnect() or connectToDevice()
+  }
+
+  void _startHealthCheck() {
+    _healthCheckTimer?.cancel();
+    _healthCheckTimer = Timer.periodic(_healthCheckInterval, (_) {
+      _performHealthCheck();
+    });
+  }
+
+  void _performHealthCheck() {
+    if (!isConnected || _isRecovering) return;
+
+    final lastCmd = _lastSuccessfulCommand;
+    if (lastCmd != null &&
+        DateTime.now().difference(lastCmd) > _healthCheckTimeout) {
+      diagnosticLog.log('Health check',
+          details: 'No successful command in ${_healthCheckTimeout.inSeconds}s, probing');
+      _hasControl = false;
+      // Resend current resistance as a probe
+      setResistanceLevel(_currentResistanceLevel);
     }
   }
 
@@ -325,22 +554,34 @@ class BleService {
     if (_controlPointCharacteristic == null) return false;
 
     try {
+      diagnosticLog.log('Requesting control');
       await _controlPointCharacteristic!.write(
         [FtmsOpCodes.requestControl],
         withoutResponse: false,
       );
       _hasControl = true;
+      diagnosticLog.log('Control granted');
       return true;
     } catch (e) {
       debugPrint('Error requesting control: $e');
+      diagnosticLog.log('Control request failed', details: '$e');
       return false;
     }
   }
 
   void _handleDisconnection() {
+    diagnosticLog.log('Disconnection detected');
     _hasControl = false;
     _controlPointCharacteristic = null;
     _connectedDevice = null;
+    _consecutiveWriteFailures = 0;
+    _isRecovering = false;
+    _healthCheckTimer?.cancel();
+    _healthCheckTimer = null;
+    _indicationSubscription?.cancel();
+    _indicationSubscription = null;
+    _statusSubscription?.cancel();
+    _statusSubscription = null;
     _updateState(TrainerConnectionState.disconnected);
   }
 

@@ -37,18 +37,18 @@ void main() {
     group('Idle State', () {
       testWidgets('shows Start button', (WidgetTester tester) async {
         await tester.pumpWidget(buildWidget(WorkoutState.idle));
-        expect(find.text('Start'), findsOneWidget);
+        expect(find.text('START'), findsOneWidget);
       });
 
       testWidgets('does not show Pause button', (WidgetTester tester) async {
         await tester.pumpWidget(buildWidget(WorkoutState.idle));
-        expect(find.text('Pause'), findsNothing);
+        expect(find.text('PAUSE'), findsNothing);
       });
 
       testWidgets('calls onStart when Start is tapped', (WidgetTester tester) async {
         await tester.pumpWidget(buildWidget(WorkoutState.idle));
 
-        await tester.tap(find.text('Start'));
+        await tester.tap(find.text('START'));
         await tester.pump();
 
         expect(startCalled, isTrue);
@@ -59,19 +59,19 @@ void main() {
       testWidgets('shows only Pause button', (WidgetTester tester) async {
         await tester.pumpWidget(buildWidget(WorkoutState.active));
 
-        expect(find.text('Pause'), findsOneWidget);
-        expect(find.text('Finish'), findsNothing); // Finish only shows when paused
+        expect(find.text('PAUSE'), findsOneWidget);
+        expect(find.text('FINISH'), findsNothing);
       });
 
       testWidgets('does not show Start button', (WidgetTester tester) async {
         await tester.pumpWidget(buildWidget(WorkoutState.active));
-        expect(find.text('Start'), findsNothing);
+        expect(find.text('START'), findsNothing);
       });
 
       testWidgets('calls onPause when Pause is tapped', (WidgetTester tester) async {
         await tester.pumpWidget(buildWidget(WorkoutState.active));
 
-        await tester.tap(find.text('Pause'));
+        await tester.tap(find.text('PAUSE'));
         await tester.pump();
 
         expect(pauseCalled, isTrue);
@@ -82,15 +82,15 @@ void main() {
       testWidgets('shows Resume, Restart, and Finish buttons', (WidgetTester tester) async {
         await tester.pumpWidget(buildWidget(WorkoutState.paused));
 
-        expect(find.text('Resume'), findsOneWidget);
-        expect(find.text('Restart'), findsOneWidget);
-        expect(find.text('Finish'), findsOneWidget);
+        expect(find.text('RESUME'), findsOneWidget);
+        expect(find.text('RESTART'), findsOneWidget);
+        expect(find.text('FINISH'), findsOneWidget);
       });
 
       testWidgets('calls onResume when Resume is tapped', (WidgetTester tester) async {
         await tester.pumpWidget(buildWidget(WorkoutState.paused));
 
-        await tester.tap(find.text('Resume'));
+        await tester.tap(find.text('RESUME'));
         await tester.pump();
 
         expect(resumeCalled, isTrue);
@@ -99,7 +99,7 @@ void main() {
       testWidgets('calls onRestart when Restart is tapped', (WidgetTester tester) async {
         await tester.pumpWidget(buildWidget(WorkoutState.paused));
 
-        await tester.tap(find.text('Restart'));
+        await tester.tap(find.text('RESTART'));
         await tester.pump();
 
         expect(restartCalled, isTrue);
@@ -108,7 +108,7 @@ void main() {
       testWidgets('calls onFinish when Finish is tapped', (WidgetTester tester) async {
         await tester.pumpWidget(buildWidget(WorkoutState.paused));
 
-        await tester.tap(find.text('Finish'));
+        await tester.tap(find.text('FINISH'));
         await tester.pump();
 
         expect(finishCalled, isTrue);
@@ -119,11 +119,11 @@ void main() {
       testWidgets('shows no buttons', (WidgetTester tester) async {
         await tester.pumpWidget(buildWidget(WorkoutState.finished));
 
-        expect(find.text('Start'), findsNothing);
-        expect(find.text('Pause'), findsNothing);
-        expect(find.text('Resume'), findsNothing);
-        expect(find.text('Restart'), findsNothing);
-        expect(find.text('Finish'), findsNothing);
+        expect(find.text('START'), findsNothing);
+        expect(find.text('PAUSE'), findsNothing);
+        expect(find.text('RESUME'), findsNothing);
+        expect(find.text('RESTART'), findsNothing);
+        expect(find.text('FINISH'), findsNothing);
       });
     });
   });

@@ -2,6 +2,128 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.3] - 2026-02-21
+
+### Fixed
+- **DONE button broken rendering**: Gold fill area only sized to text content, leaving darker base color visible as a separate rectangle behind it. Fixed by adding `IntrinsicWidth` + `CrossAxisAlignment.stretch` to `ArcadeButton` so the top color fill stretches to full button width
+- **PAUSE button too small**: Increased `minWidth` from 120 to 200 so it matches the visual weight of RESUME/RESTART/FINISH buttons
+
+### Added
+- **DONE button checkmark icon**: Added `PixelIcon.check` so DONE button is consistent with all other buttons having icons
+- `PixelIconType.check`: Pixel-art checkmark icon (2x2 blocks on 16x16 grid)
+
+## [0.6.2] - 2026-02-21
+
+### Changed
+- **Pixel stair-step corners**: All arcade containers (panels, buttons, badges) now use 2-step notched staircase corners via `PixelContainer` instead of smooth `BorderRadius.circular()`. Matches classic 8-bit arcade "CREDIT" button aesthetic.
+- **Disabled increment buttons**: Bumped fill/border alpha from 0.2 to 0.35 and text alpha from 0.3 to 0.45 for better visibility when +5 at 100% or -5 at 0%
+- **Workout summary layout**: DONE button is now pinned at the bottom of the safe area instead of being pushed off-screen by layout
+
+### Added
+- `PixelBorderPainter`: CustomPainter that draws fill + stroke with stepped pixel corners using `StrokeJoin.miter` for sharp 90-degree joins
+- `buildPixelBorderPath()`: Standalone path function reusable for both painting and clipping
+- `PixelContainer`: Drop-in replacement for `Container` + `BoxDecoration` + `BorderRadius` in arcade widgets
+- Pixel border painter tests (path bounds, closed path, inset behavior, shouldRepaint)
+- Pixel container widget tests (renders child, applies padding, CustomPaint + ClipPath presence)
+
+### Technical Details
+- `ArcadePanel.borderRadius` replaced with `notchSize` parameter
+- Style guide updated with pixel corner notch size table and `BorderRadius.circular()` pitfall
+
+## [0.6.1] - 2026-02-21
+
+### Changed
+- **Radar animation**: Rewritten with pixel block rendering (4x4 stepped rectangles) instead of smooth lines
+- **Radar size**: Increased from 160x160 to 280x280 on scan screen for better visibility
+- **Arcade panel corners**: Reduced border radius from 16 to 4 (primary) and 12 to 3 (secondary) for sharper 8-bit look
+- **Arcade panel border**: Increased primary border width from 3 to 6 for visibly pixelated corners
+- **Arcade button**: Reduced corner radius from 10/8px to 2/0px for sharp pixelated look, thickened border to 3px, wrapped in UnconstrainedBox to prevent stretching
+- **Resistance control**: Replaced arrow icons with solid gold +5/-5 buttons, narrowed panel (maxWidth 240)
+- **Workout complete screen**: Removed play icon, title now 32pt centered with FittedBox, added random encouraging affirmations
+- **Health save indicator**: Removed bullet icon from "Saved to Apple Health" text (now centered text only)
+- **HR scan sheet**: Added horizontal margins (no longer edge-to-edge), sharp 4px corners, pixel close button, animated dot sequence spinner
+- **Confetti replaced**: Replaced smooth confetti with pixel celebration painter (falling colored squares in arcade palette)
+
+### Added
+- `PixelCelebrationPainter`: CustomPainter rendering 45 gravity-affected pixel squares bursting from top center
+- `PixelIconType.close`: Pixel X icon for close buttons
+- 10 encouraging workout affirmations shown randomly on completion screen
+- Pixel celebration painter tests
+
+### Removed
+- `confetti` package dependency (replaced by native pixel celebration)
+
+### Technical Details
+- 186 unit and widget tests (up from 179)
+- `flutter analyze` reports zero issues
+
+## [0.6.0] - 2026-02-21
+
+### Added
+- **Retro pixel-art arcade UI redesign**: Complete visual overhaul with kidcore/Y2K aesthetic
+  - 8-color palette: hotPink, magenta, purpleMagenta, electricViolet, deepViolet, nightPlum, neonCyan, warmCream
+  - Press Start 2P pixel font (bundled as asset for offline use)
+  - Custom pixel-art icons via CustomPainter (13 types: arrows, heart, play, pause, stop, restart, stopwatch, warning, bluetooth, signalBars, greenDot, close)
+  - Dithered background band system with Bayer 4x4 ordered dithering
+  - Floating pixel particles and diagonal speed streaks (RepaintBoundary isolated)
+  - Resistance-reactive backgrounds (color bands shift with 0-100% level)
+- **Arcade widget system**: Reusable ArcadePanel, ArcadeButton, ArcadeBadge components
+  - ArcadeButton: 3D depth effect, press/release animation (50ms down, 150ms elasticOut spring back), 4 color schemes (gold, magenta, orange, red)
+  - ArcadePanel: nightPlum fill with colored border, primary and secondary variants
+  - ArcadeBadge: compact HUD badges with icon + text
+- **9 animation types**: Button press/release, arrow tap pulse, START button throb, radar sweep, particle drift, streak shimmer, background breathing, resistance reaction pulse, HR-synced pulse
+- **Custom screen transitions**: ArcadePageRoute with slideRight, slideUp, and fadeScale transitions
+- **Radar sweep animation**: Scan screen shows phosphor-trail radar during auto-connect
+- **Accessibility**: All animations respect iOS Reduce Motion setting (MediaQuery.disableAnimations)
+- **Pixel-art app icons**: Programmatically generated matching the arcade aesthetic (gold up-arrow on nightPlum with magenta border, cyan corner accents)
+
+### Changed
+- All screens converted to arcade aesthetic: HomeScreen, ScanScreen, HrScanSheet, WorkoutSummaryScreen
+- Resistance control uses ArcadePanel with magenta border and pixel-art arrow icons
+- Workout controls use ArcadeButton with scheme-specific colors
+- Workout stats bar uses ArcadeBadge widgets for timer, warning, and HR
+- Connection and HR indicators use ArcadeBadge
+- Confetti colors updated to match 8-color palette
+- All button/heading text is now uppercase per arcade convention
+
+### Removed
+- `font_awesome_flutter` dependency (replaced by custom pixel-art icons)
+- Old Material Design dark theme styling
+- RadialGradient background from resistance control
+
+### Dependencies
+- Added `google_fonts: ^6.2.1`
+- Removed `font_awesome_flutter: ^10.6.0`
+
+### Technical Details
+- 179 unit and widget tests (up from 115)
+- `flutter analyze` reports zero issues
+- Background system uses cached rendering with RepaintBoundary for particle performance
+- Bayer 4x4 dithering for smooth band color transitions
+- All CustomPainters guard against zero-size rendering
+
+## [0.5.0] - 2026-02-21
+
+### Added
+- **FTMS indication parsing**: Control point indications are now subscribed and parsed, detecting success/failure of every resistance command
+- **FTMS machine status subscription**: Listens on Machine Status characteristic (0x2ADA) for control revocation and trainer reset events
+- **Degraded connection state**: New `TrainerConnectionState.degraded` shown as amber dot + "Reconnecting..." when commands are failing but BLE link is alive
+- **Graduated recovery**: After 3 consecutive failures, soft recovery (re-request control + resend resistance); after 6 failures, full disconnect/reconnect cycle
+- **Health check timer**: 30-second periodic check detects stale connections where no command has succeeded in 60+ seconds
+- **BLE diagnostic log**: Circular buffer (100 entries) of timestamped BLE events for debugging connection issues
+- **Workout degraded warning**: Amber warning icon appears in workout stats bar when connection is degraded
+- **Failure snackbar**: User-visible feedback when resistance commands fail (instead of silent revert)
+
+### Changed
+- `isConnected` now returns `true` for both `connected` and `degraded` states, so resistance controls remain usable during recovery
+- `dispose()` now properly cleans up without adding events to closed stream controllers
+
+### Technical Details
+- `FtmsResultCodes`: FTMS Control Point result code constants (success, controlNotPermitted, etc.)
+- `FtmsMachineStatus`: Machine Status event constants (reset, controlPermissionLost)
+- `BleDiagnosticLog`: Lightweight circular buffer log with `debugPrint` output
+- 115 unit tests (up from 76)
+
 ## [0.4.0] - 2026-01-25
 
 ### Changed

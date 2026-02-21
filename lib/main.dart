@@ -9,6 +9,7 @@ import 'services/ble_service.dart';
 import 'services/workout_service.dart';
 import 'services/hr_service.dart';
 import 'services/health_service.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,13 +65,7 @@ class _ResistanceAppState extends State<ResistanceApp> {
     return MaterialApp(
       title: 'Resistance Control',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.data,
       home: ScanScreen(
         bleService: _bleService,
         workoutService: _workoutService,

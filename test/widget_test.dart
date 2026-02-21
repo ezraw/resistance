@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:resistance_app/widgets/resistance_control.dart';
 
 void main() {
@@ -42,7 +41,7 @@ void main() {
       expect(find.text('100'), findsOneWidget);
     });
 
-    testWidgets('calls onIncrease when up arrow is tapped', (WidgetTester tester) async {
+    testWidgets('calls onIncrease when +5 button is tapped', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(400, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -52,17 +51,13 @@ void main() {
         buildWidget(5, onIncrease: () => increased = true),
       );
 
-      // Find the up caret icon and tap it
-      final upArrow = find.byWidgetPredicate(
-        (widget) => widget is FaIcon && widget.icon == FontAwesomeIcons.caretUp,
-      );
-      await tester.tap(upArrow);
+      await tester.tap(find.text('+5'));
       await tester.pump();
 
       expect(increased, isTrue);
     });
 
-    testWidgets('calls onDecrease when down arrow is tapped', (WidgetTester tester) async {
+    testWidgets('calls onDecrease when -5 button is tapped', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(400, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -72,11 +67,7 @@ void main() {
         buildWidget(5, onDecrease: () => decreased = true),
       );
 
-      // Find the down caret icon and tap it
-      final downArrow = find.byWidgetPredicate(
-        (widget) => widget is FaIcon && widget.icon == FontAwesomeIcons.caretDown,
-      );
-      await tester.tap(downArrow);
+      await tester.tap(find.text('-5'));
       await tester.pump();
 
       expect(decreased, isTrue);
@@ -92,10 +83,7 @@ void main() {
         buildWidget(100, onIncrease: () => increased = true),
       );
 
-      final upArrow = find.byWidgetPredicate(
-        (widget) => widget is FaIcon && widget.icon == FontAwesomeIcons.caretUp,
-      );
-      await tester.tap(upArrow);
+      await tester.tap(find.text('+5'));
       await tester.pump();
 
       expect(increased, isFalse);
@@ -111,10 +99,7 @@ void main() {
         buildWidget(0, onDecrease: () => decreased = true),
       );
 
-      final downArrow = find.byWidgetPredicate(
-        (widget) => widget is FaIcon && widget.icon == FontAwesomeIcons.caretDown,
-      );
-      await tester.tap(downArrow);
+      await tester.tap(find.text('-5'));
       await tester.pump();
 
       expect(decreased, isFalse);

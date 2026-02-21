@@ -1,9 +1,17 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:confetti/confetti.dart';
 import '../services/workout_service.dart';
 import '../services/ble_service.dart';
 import '../services/health_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_typography.dart';
+import '../widgets/arcade_background.dart';
+import '../widgets/arcade/arcade_panel.dart';
+import '../widgets/arcade/arcade_button.dart';
+import '../widgets/arcade/pixel_icon.dart';
+import '../painters/resistance_band_config.dart';
+import '../painters/pixel_celebration_painter.dart';
 
 class WorkoutSummaryScreen extends StatefulWidget {
   final WorkoutService workoutService;
@@ -21,30 +29,45 @@ class WorkoutSummaryScreen extends StatefulWidget {
   State<WorkoutSummaryScreen> createState() => _WorkoutSummaryScreenState();
 }
 
-class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
-  late ConfettiController _confettiController;
+class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _celebrationController;
+  late String _affirmation;
 
-  // HealthKit save state
   bool _healthSaving = false;
   bool? _healthSaveSuccess;
+
+  static const _affirmations = [
+    'GREAT JOB OUT THERE TODAY!',
+    'I SEE YOU PUTTING IN THE WORK!',
+    'ANOTHER ONE IN THE BOOKS!',
+    'YOU SHOWED UP AND THAT MATTERS!',
+    'STRONGER EVERY SESSION!',
+    'CONSISTENCY IS YOUR SUPERPOWER!',
+    'YOU CRUSHED IT!',
+    'THAT WAS ALL YOU!',
+    'HARD WORK LOOKS GOOD ON YOU!',
+    'RESPECT THE GRIND!',
+  ];
 
   @override
   void initState() {
     super.initState();
-    // Restore system UI for summary screen
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-    // Initialize and start confetti animation
-    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
-    _confettiController.play();
+    _affirmation = _affirmations[Random().nextInt(_affirmations.length)];
 
-    // Auto-save to HealthKit
+    _celebrationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..forward();
+
     _saveToHealthKit();
   }
 
   @override
   void dispose() {
-    _confettiController.dispose();
+    _celebrationController.dispose();
     super.dispose();
   }
 
@@ -98,147 +121,127 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
     final maxHr = widget.workoutService.maxHeartRate;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
       body: Stack(
         children: [
-          // Main content
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  const Spacer(),
+          // Arcade background
+          ArcadeBackground(
+            config: ResistanceBandConfig.summary,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    // Scrollable content area
+                    Expanded(
+                      child: Center(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Title — dominant element
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'WORKOUT\nCOMPLETE!',
+                                  textAlign: TextAlign.center,
+                                  style: AppTypography.button(fontSize: 32, color: AppColors.gold),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                _affirmation,
+                                textAlign: TextAlign.center,
+                                style: AppTypography.secondary(fontSize: 8),
+                              ),
 
-                  // Title
-                  const Icon(
-                    Icons.emoji_events,
-                    size: 80,
-                    color: Color(0xFFFFD700),
-                  ),
-              const SizedBox(height: 16),
-              const Text(
-                'Workout Complete!',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+                              const SizedBox(height: 32),
 
-              const SizedBox(height: 48),
+                              // Stats
+                              _buildStatCard(
+                                icon: const PixelIcon.stopwatch(size: 24),
+                                label: 'DURATION',
+                                value: _formatDuration(duration),
+                                borderColor: AppColors.neonCyan,
+                              ),
 
-              // Stats
-              _buildStatCard(
-                icon: Icons.timer,
-                label: 'Duration',
-                value: _formatDuration(duration),
-                color: Colors.blue,
-              ),
+                              const SizedBox(height: 12),
 
-              const SizedBox(height: 16),
+                              if (avgHr > 0) ...[
+                                _buildStatCard(
+                                  icon: const PixelIcon.heart(size: 24),
+                                  label: 'AVG HEART RATE',
+                                  value: '$avgHr BPM',
+                                  borderColor: AppColors.magenta,
+                                ),
+                                const SizedBox(height: 12),
+                                _buildStatCard(
+                                  icon: const PixelIcon.heart(size: 24),
+                                  label: 'MAX HEART RATE',
+                                  value: '$maxHr BPM',
+                                  borderColor: AppColors.hotPink,
+                                ),
+                              ],
 
-              // Heart rate stats (only show if we have HR data)
-              if (avgHr > 0) ...[
-                _buildStatCard(
-                  icon: Icons.favorite,
-                  label: 'Avg Heart Rate',
-                  value: '$avgHr bpm',
-                  color: Colors.red,
-                ),
-                const SizedBox(height: 16),
-                _buildStatCard(
-                  icon: Icons.favorite,
-                  label: 'Max Heart Rate',
-                  value: '$maxHr bpm',
-                  color: Colors.orange,
-                ),
-              ],
+                              if (avgHr == 0)
+                                ArcadePanel.secondary(
+                                  borderColor: AppColors.electricViolet.withValues(alpha: 0.3),
+                                  child: Row(
+                                    children: [
+                                      PixelIcon.heart(
+                                        size: 20,
+                                        color: AppColors.white.withValues(alpha: 0.3),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          'CONNECT A HEART RATE MONITOR\nDURING YOUR NEXT WORKOUT',
+                                          style: AppTypography.secondary(fontSize: 6),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
 
-              // Placeholder when no HR data
-              if (avgHr == 0)
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.favorite_border,
-                        color: Colors.white.withValues(alpha: 0.3),
-                        size: 24,
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(
-                          'Connect a heart rate monitor during your next workout to track HR data',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.5),
-                            fontSize: 14,
+                              // HealthKit save status
+                              if (widget.healthService.isAvailable) ...[
+                                const SizedBox(height: 20),
+                                _buildHealthKitStatus(),
+                              ],
+                            ],
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-
-              // HealthKit save status
-              if (widget.healthService.isAvailable) ...[
-                const SizedBox(height: 24),
-                _buildHealthKitStatus(),
-              ],
-
-              const Spacer(),
-
-              // Done button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _done,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF1A1A2E),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
                     ),
-                  ),
-                  child: const Text(
-                    'Done',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+
+                    const SizedBox(height: 16),
+
+                    // Done button — pinned at bottom
+                    ArcadeButton(
+                      label: 'DONE',
+                      icon: const PixelIcon.check(size: 16, color: AppColors.nightPlum),
+                      onTap: _done,
+                      scheme: ArcadeButtonScheme.gold,
+                      minWidth: 200,
                     ),
-                  ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
           ),
 
-          // Confetti animation from top center
-          Align(
-            alignment: Alignment.topCenter,
-            child: ConfettiWidget(
-              confettiController: _confettiController,
-              blastDirectionality: BlastDirectionality.explosive,
-              shouldLoop: false,
-              colors: const [
-                Colors.red,
-                Colors.orange,
-                Colors.yellow,
-                Colors.green,
-                Colors.blue,
-                Colors.purple,
-                Colors.pink,
-              ],
-              numberOfParticles: 30,
-              gravity: 0.2,
+          // Pixel celebration
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedBuilder(
+                animation: _celebrationController,
+                builder: (context, child) {
+                  return CustomPaint(
+                    painter: PixelCelebrationPainter(
+                      progress: _celebrationController.value,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -252,43 +255,26 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(
-            width: 16,
-            height: 16,
+            width: 12,
+            height: 12,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: Colors.white54,
+              color: AppColors.warmCream,
             ),
           ),
           const SizedBox(width: 8),
           Text(
-            'Saving to Apple Health...',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
-              fontSize: 14,
-            ),
+            'SAVING TO APPLE HEALTH...',
+            style: AppTypography.secondary(fontSize: 7),
           ),
         ],
       );
     }
 
     if (_healthSaveSuccess == true) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.check_circle,
-            color: Colors.green,
-            size: 20,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Saved to Apple Health',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
-              fontSize: 14,
-            ),
-          ),
-        ],
+      return Text(
+        'SAVED TO APPLE HEALTH',
+        style: AppTypography.label(fontSize: 7, color: AppColors.green),
       );
     }
 
@@ -296,18 +282,11 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.info_outline,
-            color: Colors.orange,
-            size: 20,
-          ),
+          const PixelIcon.warning(size: 12),
           const SizedBox(width: 8),
           Text(
-            'Could not save to Apple Health',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
-              fontSize: 14,
-            ),
+            'COULD NOT SAVE TO APPLE HEALTH',
+            style: AppTypography.label(fontSize: 7, color: AppColors.amber),
           ),
         ],
       );
@@ -317,34 +296,16 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
   }
 
   Widget _buildStatCard({
-    required IconData icon,
+    required Widget icon,
     required String label,
     required String value,
-    required Color color,
+    required Color borderColor,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-        ),
-      ),
+    return ArcadePanel.secondary(
+      borderColor: borderColor,
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 24,
-            ),
-          ),
+          icon,
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -352,19 +313,12 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 14,
-                  ),
+                  style: AppTypography.secondary(fontSize: 7),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppTypography.number(fontSize: 16),
                 ),
               ],
             ),

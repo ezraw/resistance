@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import '../theme/app_typography.dart';
 
-/// Displays elapsed workout time in MM:SS or HH:MM:SS format
+/// Displays elapsed workout time in MM:SS or HH:MM:SS format.
 class WorkoutTimerDisplay extends StatelessWidget {
   final Duration elapsed;
   final TextStyle? style;
@@ -15,12 +16,7 @@ class WorkoutTimerDisplay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       _formatDuration(elapsed),
-      style: style ?? const TextStyle(
-        fontSize: 24,
-        fontWeight: FontWeight.w600,
-        fontFeatures: [FontFeature.tabularFigures()],
-        color: Colors.white,
-      ),
+      style: style ?? AppTypography.number(fontSize: 14),
     );
   }
 

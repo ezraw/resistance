@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:resistance_app/widgets/heart_rate_display.dart';
+import 'package:resistance_app/widgets/arcade/pixel_icon.dart';
 
 void main() {
   group('HeartRateDisplay Widget', () {
@@ -35,14 +36,19 @@ void main() {
       expect(find.text('120'), findsOneWidget);
     });
 
-    testWidgets('displays "bpm" label', (WidgetTester tester) async {
+    testWidgets('displays "BPM" label', (WidgetTester tester) async {
       await tester.pumpWidget(buildWidget(bpm: 120));
-      expect(find.text('bpm'), findsOneWidget);
+      expect(find.text('BPM'), findsOneWidget);
     });
 
-    testWidgets('displays heart icon', (WidgetTester tester) async {
+    testWidgets('displays pixel heart icon', (WidgetTester tester) async {
       await tester.pumpWidget(buildWidget(bpm: 120));
-      expect(find.byIcon(Icons.favorite), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is PixelIcon && widget.type == PixelIconType.heart,
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('calls onTap when tapped', (WidgetTester tester) async {
@@ -73,7 +79,6 @@ void main() {
     });
 
     testWidgets('displays various heart rates correctly', (WidgetTester tester) async {
-      // Test common heart rate values
       for (final hr in [60, 100, 150, 180, 200]) {
         await tester.pumpWidget(buildWidget(bpm: hr));
         expect(find.text('$hr'), findsOneWidget);

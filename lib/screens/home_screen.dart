@@ -6,9 +6,14 @@ import '../services/ble_service.dart';
 import '../services/workout_service.dart';
 import '../services/hr_service.dart';
 import '../services/health_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/page_transitions.dart';
 import '../widgets/resistance_control.dart';
 import '../widgets/workout_stats_bar.dart';
 import '../widgets/workout_controls.dart';
+import '../widgets/arcade_background.dart';
+import '../widgets/arcade/arcade_badge.dart';
+import '../widgets/arcade/pixel_icon.dart';
 import 'scan_screen.dart';
 import 'workout_summary_screen.dart';
 import 'hr_scan_sheet.dart';
@@ -43,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _pendingLevel = 0;
   bool _hasPendingUpdate = false;
 
+  TrainerConnectionState _trainerState = TrainerConnectionState.connected;
   WorkoutState _workoutState = WorkoutState.idle;
   Duration _elapsed = Duration.zero;
   int? _heartRate;
@@ -87,7 +93,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onConnectionStateChanged(TrainerConnectionState state) {
-    if (state == TrainerConnectionState.disconnected && mounted) {
+    if (!mounted) return;
+
+    // Force rebuild for any connection state change (including degraded)
+    setState(() {});
+
+    if (state == TrainerConnectionState.degraded) {
+      HapticFeedback.heavyImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Resistance control lost. Attempting recovery...'),
+          backgroundColor: Colors.amber,
+          duration: Duration(seconds: 4),
+        ),
+      );
+    } else if (state == TrainerConnectionState.connected &&
+        _trainerState == TrainerConnectionState.degraded) {
+      // Recovered from degraded
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Connection recovered.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } else if (state == TrainerConnectionState.disconnected) {
       // Pause workout if trainer disconnects
       if (_workoutState == WorkoutState.active) {
         widget.workoutService.pause();
@@ -95,17 +125,20 @@ class _HomeScreenState extends State<HomeScreen> {
       } else {
         // Go back to scan screen
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => ScanScreen(
+          ArcadePageRoute(
+            page: ScanScreen(
               bleService: widget.bleService,
               workoutService: widget.workoutService,
               hrService: widget.hrService,
               healthService: widget.healthService,
             ),
+            transition: ArcadeTransition.fadeScale,
           ),
         );
       }
     }
+
+    _trainerState = state;
   }
 
   void _showDisconnectWarning() {
@@ -192,12 +225,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _navigateToSummary() {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => WorkoutSummaryScreen(
+      ArcadePageRoute(
+        page: WorkoutSummaryScreen(
           workoutService: widget.workoutService,
           bleService: widget.bleService,
           healthService: widget.healthService,
         ),
+        transition: ArcadeTransition.slideUp,
       ),
     );
   }
@@ -253,6 +287,16 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _currentLevel = widget.bleService.currentResistanceLevel;
       });
+      // Show failure feedback (only if not already in degraded state to avoid spam)
+      if (!widget.bleService.isDegraded) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to set resistance'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
@@ -316,126 +360,108 @@ class _HomeScreenState extends State<HomeScreen> {
     final isWorkoutInProgress = widget.workoutService.isInProgress;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // Main resistance control (full screen)
-          ResistanceControl(
-            currentLevel: _currentLevel,
-            onIncrease: _increaseResistance,
-            onDecrease: _decreaseResistance,
-          ),
+      body: ArcadeBackground(
+        resistanceLevel: _currentLevel,
+        isActive: _workoutState == WorkoutState.active,
+        child: Stack(
+          children: [
+            // Main resistance control (full screen)
+            ResistanceControl(
+              currentLevel: _currentLevel,
+              onIncrease: _increaseResistance,
+              onDecrease: _decreaseResistance,
+            ),
 
-          // Workout stats bar (top) - only show during workout
-          if (isWorkoutInProgress)
+            // Workout stats bar (top) - only show during workout
+            if (isWorkoutInProgress)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: WorkoutStatsBar(
+                  elapsed: _elapsed,
+                  heartRate: _heartRate,
+                  hrConnected: _hrConnected,
+                  isConnectionDegraded: widget.bleService.isDegraded,
+                  onHrTap: _openHrScanSheet,
+                ),
+              ),
+
+            // Connection indicator (top-left) - only show when not in workout
+            if (!isWorkoutInProgress)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 8,
+                left: 16,
+                child: GestureDetector(
+                  onLongPress: _showDisconnectDialog,
+                  child: _buildConnectionIndicator(),
+                ),
+              ),
+
+            // HR indicator (top-right) - only show when not in workout
+            if (!isWorkoutInProgress)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 8,
+                right: 16,
+                child: GestureDetector(
+                  onTap: _openHrScanSheet,
+                  child: _buildHrIndicator(),
+                ),
+              ),
+
+            // Workout controls (bottom)
             Positioned(
-              top: 0,
+              bottom: MediaQuery.of(context).padding.bottom + 16,
               left: 0,
               right: 0,
-              child: WorkoutStatsBar(
-                elapsed: _elapsed,
-                heartRate: _heartRate,
-                hrConnected: _hrConnected,
-                onHrTap: _openHrScanSheet,
+              child: WorkoutControls(
+                workoutState: _workoutState,
+                onStart: _startWorkout,
+                onPause: _pauseWorkout,
+                onResume: _resumeWorkout,
+                onRestart: _restartWorkout,
+                onFinish: _finishWorkout,
               ),
             ),
-
-          // Connection indicator (top-left) - only show when not in workout
-          if (!isWorkoutInProgress)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 8,
-              left: 16,
-              child: GestureDetector(
-                onLongPress: _showDisconnectDialog,
-                child: _buildConnectionIndicator(),
-              ),
-            ),
-
-          // HR indicator (top-right) - only show when not in workout
-          if (!isWorkoutInProgress)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 8,
-              right: 16,
-              child: GestureDetector(
-                onTap: _openHrScanSheet,
-                child: _buildHrIndicator(),
-              ),
-            ),
-
-          // Workout controls (bottom)
-          Positioned(
-            bottom: MediaQuery.of(context).padding.bottom + 16,
-            left: 0,
-            right: 0,
-            child: WorkoutControls(
-              workoutState: _workoutState,
-              onStart: _startWorkout,
-              onPause: _pauseWorkout,
-              onResume: _resumeWorkout,
-              onRestart: _restartWorkout,
-              onFinish: _finishWorkout,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildConnectionIndicator() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: widget.bleService.isConnected ? Colors.green : Colors.red,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            widget.bleService.isConnected ? 'Connected' : 'Disconnected',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
+    final String label;
+    final Color borderColor;
+    final PixelIcon icon;
+    if (widget.bleService.isDegraded) {
+      label = 'RECONNECTING';
+      borderColor = AppColors.amber;
+      icon = const PixelIcon.warning(size: 12, color: AppColors.amber);
+    } else if (widget.bleService.isConnected) {
+      label = 'CONNECTED';
+      borderColor = AppColors.green;
+      icon = const PixelIcon.greenDot(size: 12, color: AppColors.green);
+    } else {
+      label = 'DISCONNECTED';
+      borderColor = AppColors.red;
+      icon = const PixelIcon.greenDot(size: 12, color: AppColors.red);
+    }
+
+    return ArcadeBadge(
+      icon: icon,
+      text: label,
+      borderColor: borderColor,
     );
   }
 
   Widget _buildHrIndicator() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(20),
+    return ArcadeBadge(
+      icon: PixelIcon.heart(
+        size: 14,
+        color: _hrConnected ? AppColors.red : AppColors.white.withValues(alpha: 0.5),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            _hrConnected ? Icons.favorite : Icons.favorite_border,
-            color: _hrConnected ? Colors.red : Colors.white.withValues(alpha: 0.7),
-            size: 16,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            _hrConnected && _heartRate != null ? '$_heartRate bpm' : 'HR',
-            style: TextStyle(
-              color: _hrConnected ? Colors.white : Colors.white.withValues(alpha: 0.7),
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
+      text: _hrConnected && _heartRate != null ? '$_heartRate BPM' : 'HR',
+      borderColor: AppColors.magenta,
     );
   }
 }

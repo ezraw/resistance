@@ -5,6 +5,15 @@ import '../services/ble_service.dart';
 import '../services/workout_service.dart';
 import '../services/hr_service.dart';
 import '../services/health_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_typography.dart';
+import '../widgets/arcade_background.dart';
+import '../widgets/arcade/arcade_panel.dart';
+import '../widgets/arcade/arcade_button.dart';
+import '../widgets/arcade/pixel_icon.dart';
+import '../painters/radar_painter.dart';
+import '../painters/resistance_band_config.dart';
+import '../theme/page_transitions.dart';
 import 'home_screen.dart';
 
 class ScanScreen extends StatefulWidget {
@@ -25,25 +34,31 @@ class ScanScreen extends StatefulWidget {
   State<ScanScreen> createState() => _ScanScreenState();
 }
 
-class _ScanScreenState extends State<ScanScreen> {
+class _ScanScreenState extends State<ScanScreen> with SingleTickerProviderStateMixin {
   List<ScanResult> _scanResults = [];
   StreamSubscription<List<ScanResult>>? _scanSubscription;
   StreamSubscription<TrainerConnectionState>? _connectionSubscription;
   bool _isScanning = false;
   bool _triedAutoConnect = false;
   bool _hasNavigated = false;
-  bool _isAutoConnecting = true;  // Start in auto-connect mode
+  bool _isAutoConnecting = true;
   String? _errorMessage;
+  late AnimationController _radarController;
 
   @override
   void initState() {
     super.initState();
+    _radarController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
     _connectionSubscription = widget.bleService.connectionState.listen(_onConnectionStateChanged);
     _tryAutoConnect();
   }
 
   @override
   void dispose() {
+    _radarController.dispose();
     _scanSubscription?.cancel();
     _connectionSubscription?.cancel();
     super.dispose();
@@ -91,7 +106,6 @@ class _ScanScreenState extends State<ScanScreen> {
       }
     });
 
-    // Stop scanning after timeout
     Future.delayed(const Duration(seconds: 15), () {
       if (mounted && _isScanning) {
         _stopScan();
@@ -128,77 +142,94 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   void _navigateToHome() {
-    // Guard against multiple navigation calls
     if (_hasNavigated) return;
     _hasNavigated = true;
 
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => HomeScreen(
+      ArcadePageRoute(
+        page: HomeScreen(
           bleService: widget.bleService,
           workoutService: widget.workoutService,
           hrService: widget.hrService,
           healthService: widget.healthService,
         ),
+        transition: ArcadeTransition.slideRight,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Show loading screen during initial auto-connect attempt
     if (_isAutoConnecting) {
       return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.bluetooth_searching,
-                size: 80,
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
-              ),
-              const SizedBox(height: 24),
-              const CircularProgressIndicator(),
-              const SizedBox(height: 24),
-              const Text(
-                'Looking for your trainer...',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey,
+        body: ArcadeBackground(
+          config: ResistanceBandConfig.scan,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Radar animation
+                SizedBox(
+                  width: 280,
+                  height: 280,
+                  child: AnimatedBuilder(
+                    animation: _radarController,
+                    builder: (context, child) {
+                      return CustomPaint(
+                        painter: RadarPainter(
+                          sweepAngle: _radarController.value,
+                          ringPhase: (_radarController.value * 1.33) % 1.0,
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+                Text(
+                  'SEARCHING...',
+                  style: AppTypography.label(fontSize: 10, color: AppColors.neonCyan),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Find Trainer'),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Status area
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: _buildStatusArea(),
-            ),
+      body: ArcadeBackground(
+        config: ResistanceBandConfig.scan,
+        child: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
+              // Title
+              Text(
+                'FIND TRAINER',
+                style: AppTypography.button(fontSize: 14, color: AppColors.white),
+              ),
+              const SizedBox(height: 16),
 
-            // Device list
-            Expanded(
-              child: _buildDeviceList(),
-            ),
+              // Status area
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: _buildStatusArea(),
+              ),
 
-            // Scan button
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: _buildScanButton(),
-            ),
-          ],
+              const SizedBox(height: 16),
+
+              // Device list
+              Expanded(
+                child: _buildDeviceList(),
+              ),
+
+              // Scan button
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: _buildScanButton(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -206,20 +237,16 @@ class _ScanScreenState extends State<ScanScreen> {
 
   Widget _buildStatusArea() {
     if (_errorMessage != null) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.red.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(12),
-        ),
+      return ArcadePanel.secondary(
+        borderColor: AppColors.red,
         child: Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.red),
+            const PixelIcon.warning(size: 20, color: AppColors.red),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 _errorMessage!,
-                style: const TextStyle(color: Colors.red),
+                style: AppTypography.label(fontSize: 8, color: AppColors.red),
               ),
             ),
           ],
@@ -228,45 +255,57 @@ class _ScanScreenState extends State<ScanScreen> {
     }
 
     if (widget.bleService.currentState == TrainerConnectionState.connecting) {
-      return const Row(
+      return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(strokeWidth: 2),
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.neonCyan,
+            ),
           ),
-          SizedBox(width: 16),
-          Text('Connecting...'),
+          const SizedBox(width: 12),
+          Text(
+            'CONNECTING...',
+            style: AppTypography.label(fontSize: 8, color: AppColors.neonCyan),
+          ),
         ],
       );
     }
 
     if (_isScanning) {
-      return const Row(
+      return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(strokeWidth: 2),
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.neonCyan,
+            ),
           ),
-          SizedBox(width: 16),
-          Text('Searching for trainers...'),
+          const SizedBox(width: 12),
+          Text(
+            'SEARCHING FOR TRAINERS...',
+            style: AppTypography.label(fontSize: 8, color: AppColors.neonCyan),
+          ),
         ],
       );
     }
 
     if (_scanResults.isEmpty) {
-      return const Text(
-        'No trainers found',
-        style: TextStyle(color: Colors.grey),
+      return Text(
+        'NO TRAINERS FOUND',
+        style: AppTypography.label(fontSize: 8, color: AppColors.warmCream.withValues(alpha: 0.5)),
       );
     }
 
     return Text(
-      '${_scanResults.length} trainer${_scanResults.length == 1 ? '' : 's'} found',
-      style: const TextStyle(color: Colors.grey),
+      '${_scanResults.length} TRAINER${_scanResults.length == 1 ? '' : 'S'} FOUND',
+      style: AppTypography.label(fontSize: 8, color: AppColors.warmCream.withValues(alpha: 0.7)),
     );
   }
 
@@ -276,16 +315,12 @@ class _ScanScreenState extends State<ScanScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.bluetooth_searching,
-              size: 80,
-              color: Colors.grey.withValues(alpha: 0.5),
-            ),
+            const PixelIcon.bluetooth(size: 64),
             const SizedBox(height: 16),
-            const Text(
-              'Make sure your trainer is on\nand in range',
+            Text(
+              'MAKE SURE YOUR TRAINER\nIS ON AND IN RANGE',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: AppTypography.secondary(fontSize: 7),
             ),
           ],
         ),
@@ -302,16 +337,38 @@ class _ScanScreenState extends State<ScanScreen> {
             ? device.platformName
             : 'Unknown Device';
 
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          child: ListTile(
-            leading: const Icon(Icons.directions_bike),
-            title: Text(name),
-            subtitle: Text(device.remoteId.str),
-            trailing: const Icon(Icons.chevron_right),
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: GestureDetector(
             onTap: widget.bleService.currentState == TrainerConnectionState.connecting
                 ? null
                 : () => _connectToDevice(device),
+            child: ArcadePanel.secondary(
+              borderColor: AppColors.magenta,
+              child: Row(
+                children: [
+                  const PixelIcon.bluetooth(size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name.toUpperCase(),
+                          style: AppTypography.label(fontSize: 8),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          device.remoteId.str,
+                          style: AppTypography.secondary(fontSize: 6),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const PixelIcon.signalBars(size: 16),
+                ],
+              ),
+            ),
           ),
         );
       },
@@ -321,16 +378,15 @@ class _ScanScreenState extends State<ScanScreen> {
   Widget _buildScanButton() {
     final isConnecting = widget.bleService.currentState == TrainerConnectionState.connecting;
 
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton.icon(
-        onPressed: isConnecting
-            ? null
-            : (_isScanning ? _stopScan : _startScan),
-        icon: Icon(_isScanning ? Icons.stop : Icons.refresh),
-        label: Text(_isScanning ? 'Stop Scan' : 'Scan Again'),
-      ),
+    return ArcadeButton(
+      label: isConnecting
+          ? 'CONNECTING'
+          : (_isScanning ? 'STOP SCAN' : 'SCAN AGAIN'),
+      onTap: isConnecting
+          ? null
+          : (_isScanning ? _stopScan : _startScan),
+      enabled: !isConnecting,
+      scheme: ArcadeButtonScheme.gold,
     );
   }
 }

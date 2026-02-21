@@ -2,14 +2,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../services/hr_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_typography.dart';
+import '../widgets/arcade/arcade_panel.dart';
+import '../widgets/arcade/arcade_button.dart';
+import '../widgets/arcade/pixel_icon.dart';
 
-/// Bottom sheet for discovering and connecting to HR monitors
+/// Bottom sheet for discovering and connecting to HR monitors.
 class HrScanSheet extends StatefulWidget {
   final HrService hrService;
 
   const HrScanSheet({super.key, required this.hrService});
 
-  /// Show the HR scan sheet as a modal bottom sheet
   static Future<void> show(BuildContext context, HrService hrService) {
     return showModalBottomSheet(
       context: context,
@@ -29,16 +33,27 @@ class _HrScanSheetState extends State<HrScanSheet> {
   StreamSubscription<HrConnectionState>? _connectionSubscription;
   bool _isScanning = false;
   String? _errorMessage;
+  int _dotCount = 1;
+  Timer? _dotTimer;
 
   @override
   void initState() {
     super.initState();
     _connectionSubscription = widget.hrService.connectionState.listen(_onConnectionStateChanged);
     _startScan();
+    // Animate dot sequence for scanning indicator
+    _dotTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      if (mounted) {
+        setState(() {
+          _dotCount = (_dotCount % 3) + 1;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
+    _dotTimer?.cancel();
     _scanSubscription?.cancel();
     _connectionSubscription?.cancel();
     widget.hrService.stopScan();
@@ -61,7 +76,6 @@ class _HrScanSheetState extends State<HrScanSheet> {
       }
     });
 
-    // Stop scanning after timeout
     Future.delayed(const Duration(seconds: 15), () {
       if (mounted && _isScanning) {
         _stopScan();
@@ -92,12 +106,12 @@ class _HrScanSheetState extends State<HrScanSheet> {
   }
 
   void _onConnectionStateChanged(HrConnectionState state) {
-    // Note: Sheet dismissal is handled in _connectToDevice on success.
-    // We only need to update UI state here for connecting indicator.
     if (mounted) {
       setState(() {});
     }
   }
+
+  String get _scanningDots => '.' * _dotCount;
 
   @override
   Widget build(BuildContext context) {
@@ -106,72 +120,74 @@ class _HrScanSheetState extends State<HrScanSheet> {
       minChildSize: 0.3,
       maxChildSize: 0.8,
       builder: (context, scrollController) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF1A1A2E),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              // Handle bar
-              Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.nightPlum,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              border: Border.all(
+                color: AppColors.magenta,
+                width: 3,
               ),
+            ),
+            child: Column(
+              children: [
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.warmCream.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
 
-              // Title
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.favorite,
-                      color: Colors.red,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text(
-                        'Connect Heart Rate Monitor',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                // Title
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      const PixelIcon.heart(size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'CONNECT HR MONITOR',
+                          style: AppTypography.button(fontSize: 10, color: AppColors.white),
                         ),
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white54),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: const PixelIcon.close(
+                          size: 24,
+                          color: AppColors.warmCream,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              // Status area
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _buildStatusArea(),
-              ),
+                // Status area
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _buildStatusArea(),
+                ),
 
-              const SizedBox(height: 8),
+                const SizedBox(height: 8),
 
-              // Device list
-              Expanded(
-                child: _buildDeviceList(scrollController),
-              ),
+                // Device list
+                Expanded(
+                  child: _buildDeviceList(scrollController),
+                ),
 
-              // Scan button
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: _buildScanButton(),
-              ),
-            ],
+                // Scan button
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: _buildScanButton(),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -180,20 +196,16 @@ class _HrScanSheetState extends State<HrScanSheet> {
 
   Widget _buildStatusArea() {
     if (_errorMessage != null) {
-      return Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.red.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(8),
-        ),
+      return ArcadePanel.secondary(
+        borderColor: AppColors.red,
         child: Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 20),
+            const PixelIcon.warning(size: 16, color: AppColors.red),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 _errorMessage!,
-                style: const TextStyle(color: Colors.red, fontSize: 14),
+                style: AppTypography.label(fontSize: 8, color: AppColors.red),
               ),
             ),
           ],
@@ -205,15 +217,9 @@ class _HrScanSheetState extends State<HrScanSheet> {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red),
-          ),
-          const SizedBox(width: 12),
           Text(
-            'Connecting...',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+            'CONNECTING$_scanningDots',
+            style: AppTypography.label(fontSize: 8, color: AppColors.warmCream.withValues(alpha: 0.7)),
           ),
         ],
       );
@@ -223,15 +229,9 @@ class _HrScanSheetState extends State<HrScanSheet> {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red),
-          ),
-          const SizedBox(width: 12),
           Text(
-            'Searching for HR monitors...',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+            'SEARCHING$_scanningDots',
+            style: AppTypography.label(fontSize: 8, color: AppColors.warmCream.withValues(alpha: 0.7)),
           ),
         ],
       );
@@ -239,14 +239,14 @@ class _HrScanSheetState extends State<HrScanSheet> {
 
     if (_scanResults.isEmpty) {
       return Text(
-        'No HR monitors found',
-        style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+        'NO HR MONITORS FOUND',
+        style: AppTypography.label(fontSize: 8, color: AppColors.warmCream.withValues(alpha: 0.5)),
       );
     }
 
     return Text(
-      '${_scanResults.length} device${_scanResults.length == 1 ? '' : 's'} found',
-      style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+      '${_scanResults.length} DEVICE${_scanResults.length == 1 ? '' : 'S'} FOUND',
+      style: AppTypography.label(fontSize: 8, color: AppColors.warmCream.withValues(alpha: 0.7)),
     );
   }
 
@@ -256,16 +256,15 @@ class _HrScanSheetState extends State<HrScanSheet> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.bluetooth_searching,
+            PixelIcon.heart(
               size: 48,
-              color: Colors.white.withValues(alpha: 0.3),
+              color: AppColors.white.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 12),
             Text(
-              'Make sure your HR monitor\nis on and in range',
+              'MAKE SURE YOUR HR MONITOR\nIS ON AND IN RANGE',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+              style: AppTypography.secondary(fontSize: 7),
             ),
           ],
         ),
@@ -283,26 +282,37 @@ class _HrScanSheetState extends State<HrScanSheet> {
             ? device.platformName
             : 'Unknown HR Monitor';
 
-        return Card(
-          color: Colors.white.withValues(alpha: 0.1),
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          child: ListTile(
-            leading: const Icon(Icons.favorite, color: Colors.red),
-            title: Text(
-              name,
-              style: const TextStyle(color: Colors.white),
-            ),
-            subtitle: Text(
-              device.remoteId.str,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-            ),
-            trailing: Icon(
-              Icons.chevron_right,
-              color: Colors.white.withValues(alpha: 0.5),
-            ),
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: GestureDetector(
             onTap: widget.hrService.currentState == HrConnectionState.connecting
                 ? null
                 : () => _connectToDevice(device),
+            child: ArcadePanel.secondary(
+              borderColor: AppColors.magenta,
+              child: Row(
+                children: [
+                  const PixelIcon.heart(size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name.toUpperCase(),
+                          style: AppTypography.label(fontSize: 8),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          device.remoteId.str,
+                          style: AppTypography.secondary(fontSize: 6),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       },
@@ -312,23 +322,15 @@ class _HrScanSheetState extends State<HrScanSheet> {
   Widget _buildScanButton() {
     final isConnecting = widget.hrService.currentState == HrConnectionState.connecting;
 
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: ElevatedButton.icon(
-        onPressed: isConnecting
-            ? null
-            : (_isScanning ? _stopScan : _startScan),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red.withValues(alpha: 0.2),
-          foregroundColor: Colors.red,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-        ),
-        icon: Icon(_isScanning ? Icons.stop : Icons.refresh),
-        label: Text(_isScanning ? 'Stop Scan' : 'Scan Again'),
-      ),
+    return ArcadeButton(
+      label: isConnecting
+          ? 'CONNECTING'
+          : (_isScanning ? 'STOP SCAN' : 'SCAN AGAIN'),
+      onTap: isConnecting
+          ? null
+          : (_isScanning ? _stopScan : _startScan),
+      enabled: !isConnecting,
+      scheme: ArcadeButtonScheme.red,
     );
   }
 }
