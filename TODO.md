@@ -45,7 +45,7 @@
   - [x] HR zone bar chart (5-zone model, pixel-art horizontal bars)
   - [x] PixelIcon.list icon type and ResistanceBandConfig.history background
 - [x] **Seed data service**: In-app database seeding (long-press HISTORY title 10s) to populate 8 realistic test activities
-- [ ] **Configurable max HR**: Allow user to set max heart rate for zone calculations (currently defaults to 190)
+- [x] **Configurable max HR**: Allow user to set max heart rate for zone calculations (v0.9.0 — UserSettingsService)
 - [ ] **Delete activities**: Add swipe-to-delete or long-press delete on activity list
 
 ## UI Redesign

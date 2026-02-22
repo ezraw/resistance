@@ -4,10 +4,15 @@ A simple Flutter app to control the resistance level of a Wahoo Kickr Core 2 sma
 
 <p align="center">
   <img src="docs/screenshots/01-scanning.png" width="150" alt="Scanning for trainer">
-  <img src="docs/screenshots/02-connected.png" width="150" alt="Connected - ready to start">
-  <img src="docs/screenshots/03-workout-active.png" width="150" alt="Workout in progress">
-  <img src="docs/screenshots/04-workout-paused.png" width="150" alt="Workout paused">
-  <img src="docs/screenshots/05-workout-complete.png" width="150" alt="Workout complete">
+  <img src="docs/screenshots/02-workout-active.png" width="150" alt="Workout in progress">
+  <img src="docs/screenshots/03-workout-paused.png" width="150" alt="Workout paused">
+  <img src="docs/screenshots/04-workout-complete.png" width="150" alt="Workout complete">
+  <img src="docs/screenshots/05-hr-scan.png" width="150" alt="HR monitor scan">
+  <img src="docs/screenshots/06-disconnect.png" width="150" alt="Disconnect dialog">
+  <img src="docs/screenshots/07-history.png" width="150" alt="Workout history">
+  <img src="docs/screenshots/08-activity-detail.png" width="150" alt="Activity detail">
+  <img src="docs/screenshots/09-settings-maxhr.png" width="150" alt="Settings - Max HR">
+  <img src="docs/screenshots/10-settings-ftp.png" width="150" alt="Settings - FTP">
 </p>
 
 ## Download
