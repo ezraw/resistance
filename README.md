@@ -2,6 +2,18 @@
 
 A simple Flutter app to control the resistance level of a Wahoo Kickr Core 2 smart trainer via Bluetooth, independent of Zwift.
 
+<p align="center">
+  <img src="docs/screenshots/01-scanning.png" width="150" alt="Scanning for trainer">
+  <img src="docs/screenshots/02-connected.png" width="150" alt="Connected - ready to start">
+  <img src="docs/screenshots/03-workout-active.png" width="150" alt="Workout in progress">
+  <img src="docs/screenshots/04-workout-paused.png" width="150" alt="Workout paused">
+  <img src="docs/screenshots/05-workout-complete.png" width="150" alt="Workout complete">
+</p>
+
+## Download
+
+Available on [TestFlight](https://testflight.apple.com/join/ma9zq74d) for iOS.
+
 ## Problem
 
 When using a Zwift Ride with Kickr Core 2, there's no way to adjust trainer resistance without running Zwift. This makes standalone workouts (like following a YouTube spin class) impossible without manual resistance control.
