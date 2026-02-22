@@ -47,12 +47,22 @@ class Activity {
     final startTime = workoutService.workoutStartTime ?? now;
     final avgHr = workoutService.averageHeartRate;
     final maxHr = workoutService.maxHeartRate;
+    final avgW = workoutService.averageWatts;
+    final maxW = workoutService.maxWatts;
+    final avgCad = workoutService.averageCadence;
+    final avgSpd = workoutService.averageSpeedMph;
+    final maxSpd = workoutService.maxSpeedMph;
 
     return Activity(
       startedAt: startTime.toUtc(),
       durationSeconds: workoutService.finalDuration.inSeconds,
       avgHeartRate: avgHr > 0 ? avgHr : null,
       maxHeartRate: maxHr > 0 ? maxHr : null,
+      avgWatts: avgW > 0 ? avgW : null,
+      maxWatts: maxW > 0 ? maxW : null,
+      avgCadence: avgCad > 0 ? avgCad : null,
+      avgMph: avgSpd > 0 ? avgSpd : null,
+      maxMph: maxSpd > 0 ? maxSpd : null,
       source: 'resistance_app',
       createdAt: now,
     );

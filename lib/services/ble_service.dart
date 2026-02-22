@@ -10,6 +10,23 @@ class FtmsUuids {
   static final Guid controlPoint = Guid('00002ad9-0000-1000-8000-00805f9b34fb');
   static final Guid resistanceRange = Guid('00002ad6-0000-1000-8000-00805f9b34fb');
   static final Guid status = Guid('00002ada-0000-1000-8000-00805f9b34fb');
+  static final Guid indoorBikeData = Guid('00002ad2-0000-1000-8000-00805f9b34fb');
+}
+
+/// Parsed trainer data from FTMS Indoor Bike Data characteristic
+class TrainerData {
+  final int watts;
+  final double cadenceRpm;
+  final double speedKmh;
+
+  const TrainerData({
+    required this.watts,
+    required this.cadenceRpm,
+    required this.speedKmh,
+  });
+
+  @override
+  String toString() => 'TrainerData(watts: $watts, cadence: ${cadenceRpm.toStringAsFixed(1)} RPM, speed: ${speedKmh.toStringAsFixed(1)} km/h)';
 }
 
 /// FTMS Control Point Op Codes
@@ -59,10 +76,13 @@ class BleService {
   StreamSubscription<List<ScanResult>>? _scanSubscription;
   StreamSubscription<List<int>>? _indicationSubscription;
   StreamSubscription<List<int>>? _statusSubscription;
+  StreamSubscription<List<int>>? _bikeDataSubscription;
   Timer? _healthCheckTimer;
 
   final _connectionStateController = StreamController<TrainerConnectionState>.broadcast();
   final _resistanceLevelController = StreamController<int>.broadcast();
+  final _trainerDataController = StreamController<TrainerData>.broadcast();
+  TrainerData? _currentTrainerData;
 
   TrainerConnectionState _currentState = TrainerConnectionState.disconnected;
   int _currentResistanceLevel = 0;
@@ -81,6 +101,12 @@ class BleService {
 
   /// Stream of resistance level changes
   Stream<int> get resistanceLevel => _resistanceLevelController.stream;
+
+  /// Stream of trainer data (power, cadence, speed) from FTMS Indoor Bike Data
+  Stream<TrainerData> get trainerData => _trainerDataController.stream;
+
+  /// Most recent trainer data reading (null if none received)
+  TrainerData? get currentTrainerData => _currentTrainerData;
 
   /// Current connection state
   TrainerConnectionState get currentState => _currentState;
@@ -213,6 +239,8 @@ class BleService {
     _indicationSubscription = null;
     await _statusSubscription?.cancel();
     _statusSubscription = null;
+    await _bikeDataSubscription?.cancel();
+    _bikeDataSubscription = null;
     await _connectionSubscription?.cancel();
     _connectionSubscription = null;
 
@@ -348,6 +376,7 @@ class BleService {
     _connectionSubscription?.cancel();
     _indicationSubscription?.cancel();
     _statusSubscription?.cancel();
+    _bikeDataSubscription?.cancel();
     // Disconnect before closing streams to avoid adding events after close
     _hasControl = false;
     _controlPointCharacteristic = null;
@@ -355,6 +384,7 @@ class BleService {
     _connectedDevice = null;
     _connectionStateController.close();
     _resistanceLevelController.close();
+    _trainerDataController.close();
   }
 
   // Private methods
@@ -388,6 +418,13 @@ class BleService {
             await char.setNotifyValue(true);
             _indicationSubscription = char.lastValueStream.listen(_onControlPointIndication);
             diagnosticLog.log('FTMS indications subscribed');
+          }
+        } else if (char.uuid == FtmsUuids.indoorBikeData) {
+          // Subscribe to Indoor Bike Data characteristic for power/cadence/speed
+          if (char.properties.notify || char.properties.indicate) {
+            await char.setNotifyValue(true);
+            _bikeDataSubscription = char.lastValueStream.listen(_onIndoorBikeData);
+            diagnosticLog.log('FTMS indoor bike data subscribed');
           }
         } else if (char.uuid == FtmsUuids.status) {
           // Subscribe to Machine Status characteristic
@@ -452,6 +489,85 @@ class BleService {
           details: 'status=0x${statusCode.toRadixString(16)}');
       _hasControl = false;
     }
+  }
+
+  /// Parse FTMS Indoor Bike Data (UUID 0x2AD2) notifications.
+  ///
+  /// The packet has a 16-bit flags field followed by variable-length fields.
+  /// We must walk through all present fields in order to find the ones we need.
+  @visibleForTesting
+  void onIndoorBikeData(List<int> data) {
+    if (data.length < 2) return;
+
+    // Read 16-bit flags (little-endian)
+    final flags = data[0] | (data[1] << 8);
+    int offset = 2;
+
+    double speedKmh = 0.0;
+    double cadenceRpm = 0.0;
+    int watts = 0;
+
+    // Bit 0: More Data — INVERTED: speed is present when bit 0 = 0
+    if ((flags & 0x01) == 0) {
+      if (offset + 2 <= data.length) {
+        final rawSpeed = data[offset] | (data[offset + 1] << 8);
+        speedKmh = rawSpeed * 0.01;
+        offset += 2;
+      }
+    }
+
+    // Bit 1: Average Speed Present
+    if ((flags & 0x02) != 0) {
+      offset += 2; // uint16 — skip
+    }
+
+    // Bit 2: Instantaneous Cadence Present
+    if ((flags & 0x04) != 0) {
+      if (offset + 2 <= data.length) {
+        final rawCadence = data[offset] | (data[offset + 1] << 8);
+        cadenceRpm = rawCadence * 0.5;
+        offset += 2;
+      }
+    }
+
+    // Bit 3: Average Cadence Present
+    if ((flags & 0x08) != 0) {
+      offset += 2; // uint16 — skip
+    }
+
+    // Bit 4: Total Distance Present
+    if ((flags & 0x10) != 0) {
+      offset += 3; // uint24 — skip
+    }
+
+    // Bit 5: Resistance Level Present
+    if ((flags & 0x20) != 0) {
+      offset += 2; // sint16 — skip
+    }
+
+    // Bit 6: Instantaneous Power Present
+    if ((flags & 0x40) != 0) {
+      if (offset + 2 <= data.length) {
+        final rawPower = data[offset] | (data[offset + 1] << 8);
+        // sint16: sign-extend if needed
+        watts = rawPower > 32767 ? rawPower - 65536 : rawPower;
+        if (watts < 0) watts = 0;
+      }
+    }
+
+    final trainerData = TrainerData(
+      watts: watts,
+      cadenceRpm: cadenceRpm,
+      speedKmh: speedKmh,
+    );
+
+    _currentTrainerData = trainerData;
+    _trainerDataController.add(trainerData);
+  }
+
+  /// Internal handler for BLE notifications — delegates to the parser
+  void _onIndoorBikeData(List<int> data) {
+    onIndoorBikeData(data);
   }
 
   void _onCommandSuccess() {
@@ -582,6 +698,8 @@ class BleService {
     _indicationSubscription = null;
     _statusSubscription?.cancel();
     _statusSubscription = null;
+    _bikeDataSubscription?.cancel();
+    _bikeDataSubscription = null;
     _updateState(TrainerConnectionState.disconnected);
   }
 

@@ -62,10 +62,15 @@ A minimal mobile app with two buttons (up/down) and a percentage display (0-100%
 - Activity detail screen with HR zone bar chart (5-zone model)
 - **Dev tool**: Long-press the HISTORY title for 10 seconds to seed 8 realistic test activities
 
+### Trainer Metrics
+- Power (watts), cadence (RPM), and speed captured from FTMS Indoor Bike Data during workouts
+- Stored per-second in activity samples alongside heart rate data
+- Average and max power/cadence/speed tracked per activity
+
 ## Future Enhancements
 
 - Zwift Ride handlebar control integration (use shift buttons to adjust resistance)
-- Live power/cadence/speed display
+- Live power/cadence/speed display on workout screen
 - Preset resistance profiles
 - Android support
 
@@ -76,7 +81,8 @@ A minimal mobile app with two buttons (up/down) and a percentage display (0-100%
 - **Protocol**: FTMS (Fitness Machine Service) - Bluetooth SIG standard
 - **Trainer Communication**:
   - Service UUID: `0x1826`
-  - Control Point: `0x2AD9`
+  - Control Point: `0x2AD9` (write resistance commands)
+  - Indoor Bike Data: `0x2AD2` (read power, cadence, speed)
   - Set Resistance: Op Code `0x04`
 
 ## Requirements

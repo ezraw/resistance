@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0] - 2026-02-22
+
+### Added
+- **FTMS Indoor Bike Data capture**: Subscribe to the trainer's Indoor Bike Data characteristic (UUID `0x2AD2`) to receive real-time power, cadence, and speed data during workouts
+  - `TrainerData` class: Parsed FTMS packet with `watts`, `cadenceRpm`, and `speedKmh`
+  - `BleService.trainerData` stream: Broadcasts parsed trainer data from BLE notifications
+  - `BleService.currentTrainerData` getter: Latest reading for synchronous access
+  - Full FTMS Indoor Bike Data packet parser handling variable-length fields per Bluetooth SIG spec
+- **Trainer data recording in WorkoutService**: Record power, cadence, and speed during workouts
+  - `TrainerDataReading` class with timestamp (mirrors `HeartRateReading` pattern)
+  - `recordTrainerData()` method: Only records when workout is in progress and watts > 0
+  - Aggregation getters: `averageWatts`, `maxWatts`, `averageCadence`, `averageSpeedMph`, `maxSpeedMph`
+  - Data cleared on start/restart/reset (same lifecycle as HR data)
+- **Activity power/cadence/speed storage**: `Activity.fromWorkout()` now populates `avgWatts`, `maxWatts`, `avgCadence`, `avgMph`, `maxMph` from workout trainer data
+- **Merged activity samples**: HR and trainer data readings (from different BLE devices at different rates) are merged into unified per-second `ActivitySample` objects at save time using second-aligned timestamps
+- **Seed data with trainer metrics**: 6 of 8 seed activities now include realistic power (80-320W), cadence (60-100 RPM), and speed (15-38 km/h) data following warmup/main/cooldown zone patterns
+
+### Technical Details
+- FTMS Indoor Bike Data flags: bit 0 inverted (speed present when 0), bit 2 (cadence), bit 6 (power)
+- Speed conversion: km/h * 0.621371 = mph
+- Cadence resolution: raw value * 0.5 = RPM
+- Power: sint16 clamped to >= 0
+- 298 unit and widget tests (up from 273)
+- `flutter analyze` reports zero issues
+
 ## [0.7.0] - 2026-02-22
 
 ### Added

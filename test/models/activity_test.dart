@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:resistance_app/models/activity.dart';
+import 'package:resistance_app/services/workout_service.dart';
 
 void main() {
   group('Activity Model', () {
@@ -128,6 +129,71 @@ void main() {
         final map = activity.toMap();
         expect(map['duration_seconds'], isA<int>());
         expect(map['duration_seconds'], 1800);
+      });
+    });
+
+    group('fromWorkout', () {
+      late WorkoutService workoutService;
+
+      setUp(() {
+        workoutService = WorkoutService();
+      });
+
+      tearDown(() {
+        workoutService.dispose();
+      });
+
+      test('includes power, cadence, and speed when trainer data recorded', () async {
+        workoutService.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        workoutService.recordTrainerData(150, 80.0, 25.0);
+        workoutService.recordTrainerData(200, 90.0, 30.0);
+        workoutService.recordTrainerData(175, 85.0, 27.5);
+
+        workoutService.finish();
+
+        final activity = Activity.fromWorkout(workoutService);
+
+        expect(activity.avgWatts, equals(175));
+        expect(activity.maxWatts, equals(200));
+        expect(activity.avgCadence, equals(85));
+        expect(activity.avgMph, isNotNull);
+        expect(activity.avgMph!, greaterThan(0));
+        expect(activity.maxMph, isNotNull);
+        expect(activity.maxMph!, greaterThan(0));
+      });
+
+      test('leaves power/cadence/speed null when no trainer data', () async {
+        workoutService.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        workoutService.recordHeartRate(120);
+
+        workoutService.finish();
+
+        final activity = Activity.fromWorkout(workoutService);
+
+        expect(activity.avgWatts, isNull);
+        expect(activity.maxWatts, isNull);
+        expect(activity.avgCadence, isNull);
+        expect(activity.avgMph, isNull);
+        expect(activity.maxMph, isNull);
+      });
+
+      test('includes both HR and trainer data when both recorded', () async {
+        workoutService.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        workoutService.recordHeartRate(130);
+        workoutService.recordTrainerData(180, 85.0, 28.0);
+
+        workoutService.finish();
+
+        final activity = Activity.fromWorkout(workoutService);
+
+        expect(activity.avgHeartRate, equals(130));
+        expect(activity.avgWatts, equals(180));
       });
     });
   });

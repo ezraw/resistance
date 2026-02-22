@@ -106,16 +106,64 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
   Future<void> _saveToActivityHistory() async {
     try {
       final activity = Activity.fromWorkout(widget.workoutService);
-      final samples = widget.workoutService.heartRateReadings
-          .map((r) => ActivitySample(
-                timestamp: r.timestamp,
-                heartRate: r.bpm,
-              ))
-          .toList();
+      final samples = _mergeReadingsIntoSamples();
       await widget.activityService.insertWithSamples(activity, samples);
     } catch (e) {
       debugPrint('Failed to save activity history: $e');
     }
+  }
+
+  /// Merge HR readings and trainer data readings into unified per-second ActivitySamples.
+  ///
+  /// HR and trainer data arrive from different BLE devices at potentially different rates.
+  /// We floor each timestamp to the nearest second and merge into one sample per second.
+  List<ActivitySample> _mergeReadingsIntoSamples() {
+    final sampleMap = <int, _MergedSample>{};
+
+    // Add HR readings
+    for (final r in widget.workoutService.heartRateReadings) {
+      final key = r.timestamp.millisecondsSinceEpoch ~/ 1000;
+      final existing = sampleMap[key];
+      if (existing != null) {
+        existing.heartRate = r.bpm;
+      } else {
+        sampleMap[key] = _MergedSample(
+          timestamp: DateTime.fromMillisecondsSinceEpoch(key * 1000, isUtc: r.timestamp.isUtc),
+          heartRate: r.bpm,
+        );
+      }
+    }
+
+    // Add trainer data readings
+    for (final r in widget.workoutService.trainerDataReadings) {
+      final key = r.timestamp.millisecondsSinceEpoch ~/ 1000;
+      final existing = sampleMap[key];
+      if (existing != null) {
+        existing.watts = r.watts;
+        existing.cadence = r.cadenceRpm.round();
+        existing.speedMph = r.speedKmh * 0.621371;
+      } else {
+        sampleMap[key] = _MergedSample(
+          timestamp: DateTime.fromMillisecondsSinceEpoch(key * 1000, isUtc: r.timestamp.isUtc),
+          watts: r.watts,
+          cadence: r.cadenceRpm.round(),
+          speedMph: r.speedKmh * 0.621371,
+        );
+      }
+    }
+
+    // Sort by timestamp and convert to ActivitySample
+    final sortedKeys = sampleMap.keys.toList()..sort();
+    return sortedKeys.map((key) {
+      final m = sampleMap[key]!;
+      return ActivitySample(
+        timestamp: m.timestamp,
+        heartRate: m.heartRate,
+        watts: m.watts,
+        cadence: m.cadence,
+        speedMph: m.speedMph,
+      );
+    }).toList();
   }
 
   void _openHistory() {
@@ -372,4 +420,21 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
       ),
     );
   }
+}
+
+/// Mutable container for merging HR and trainer data by second.
+class _MergedSample {
+  final DateTime timestamp;
+  int? heartRate;
+  int? watts;
+  int? cadence;
+  double? speedMph;
+
+  _MergedSample({
+    required this.timestamp,
+    this.heartRate,
+    this.watts,
+    this.cadence,
+    this.speedMph,
+  });
 }

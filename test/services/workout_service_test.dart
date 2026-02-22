@@ -241,6 +241,150 @@ void main() {
       });
     });
 
+    group('Trainer Data Recording', () {
+      test('records trainer data readings during workout', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        service.recordTrainerData(150, 80.0, 25.0);
+        service.recordTrainerData(200, 85.0, 28.0);
+        service.recordTrainerData(175, 82.0, 26.0);
+
+        expect(service.averageWatts, equals(175));
+      });
+
+      test('tracks max watts', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        service.recordTrainerData(100, 70.0, 20.0);
+        service.recordTrainerData(250, 90.0, 30.0);
+        service.recordTrainerData(180, 80.0, 25.0);
+
+        expect(service.maxWatts, equals(250));
+      });
+
+      test('computes average cadence', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        service.recordTrainerData(150, 80.0, 25.0);
+        service.recordTrainerData(200, 90.0, 28.0);
+
+        expect(service.averageCadence, equals(85));
+      });
+
+      test('computes average speed in mph', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        // 25 km/h and 35 km/h => avg 30 km/h => 18.64 mph
+        service.recordTrainerData(150, 80.0, 25.0);
+        service.recordTrainerData(200, 85.0, 35.0);
+
+        expect(service.averageSpeedMph, closeTo(18.64, 0.01));
+      });
+
+      test('computes max speed in mph', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        service.recordTrainerData(150, 80.0, 25.0);
+        service.recordTrainerData(200, 85.0, 35.0);
+
+        // 35 km/h = 21.75 mph
+        expect(service.maxSpeedMph, closeTo(21.75, 0.01));
+      });
+
+      test('ignores readings with zero watts', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        service.recordTrainerData(0, 80.0, 25.0);
+        service.recordTrainerData(150, 85.0, 28.0);
+
+        expect(service.averageWatts, equals(150));
+        expect(service.maxWatts, equals(150));
+      });
+
+      test('does not record when not in progress', () {
+        service.recordTrainerData(200, 85.0, 28.0);
+
+        expect(service.averageWatts, equals(0));
+        expect(service.maxWatts, equals(0));
+      });
+
+      test('trainer data stats reset on restart', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+        service.recordTrainerData(200, 85.0, 28.0);
+
+        service.restart();
+
+        expect(service.averageWatts, equals(0));
+        expect(service.maxWatts, equals(0));
+        expect(service.averageCadence, equals(0));
+        expect(service.averageSpeedMph, equals(0.0));
+        expect(service.maxSpeedMph, equals(0.0));
+      });
+
+      test('trainer data stats reset on reset', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+        service.recordTrainerData(200, 85.0, 28.0);
+        service.finish();
+
+        service.reset();
+
+        expect(service.averageWatts, equals(0));
+        expect(service.maxWatts, equals(0));
+        expect(service.trainerDataReadings, isEmpty);
+      });
+
+      test('trainerDataReadings returns unmodifiable list', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+        service.recordTrainerData(200, 85.0, 28.0);
+
+        final readings = service.trainerDataReadings;
+        expect(
+          () => readings.add(TrainerDataReading(
+            watts: 100,
+            cadenceRpm: 70.0,
+            speedKmh: 20.0,
+            timestamp: DateTime.now(),
+          )),
+          throwsUnsupportedError,
+        );
+      });
+
+      test('trainerDataReadings have timestamps', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        final before = DateTime.now();
+        service.recordTrainerData(200, 85.0, 28.0);
+        final after = DateTime.now();
+
+        expect(service.trainerDataReadings.length, equals(1));
+        expect(service.trainerDataReadings.first.watts, equals(200));
+        expect(service.trainerDataReadings.first.cadenceRpm, equals(85.0));
+        expect(service.trainerDataReadings.first.speedKmh, equals(28.0));
+        expect(
+          service.trainerDataReadings.first.timestamp.isAfter(
+            before.subtract(const Duration(seconds: 1)),
+          ),
+          isTrue,
+        );
+        expect(
+          service.trainerDataReadings.first.timestamp.isBefore(
+            after.add(const Duration(seconds: 1)),
+          ),
+          isTrue,
+        );
+      });
+    });
+
     group('Workout Timestamps for HealthKit', () {
       test('workoutStartTime is null initially', () {
         expect(service.workoutStartTime, isNull);

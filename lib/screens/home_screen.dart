@@ -48,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
   StreamSubscription<Duration>? _elapsedSubscription;
   StreamSubscription<HrConnectionState>? _hrConnectionSubscription;
   StreamSubscription<int>? _hrSubscription;
+  StreamSubscription<TrainerData>? _trainerDataSubscription;
   Timer? _debounceTimer;
   int _pendingLevel = 0;
   bool _hasPendingUpdate = false;
@@ -72,6 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _elapsedSubscription = widget.workoutService.elapsedStream.listen(_onElapsedChanged);
     _hrConnectionSubscription = widget.hrService.connectionState.listen(_onHrConnectionStateChanged);
     _hrSubscription = widget.hrService.heartRate.listen(_onHeartRateChanged);
+    _trainerDataSubscription = widget.bleService.trainerData.listen(_onTrainerDataChanged);
 
     // Hide status bar for immersive experience
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -92,6 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _elapsedSubscription?.cancel();
     _hrConnectionSubscription?.cancel();
     _hrSubscription?.cancel();
+    _trainerDataSubscription?.cancel();
     _debounceTimer?.cancel();
     super.dispose();
   }
@@ -226,6 +229,13 @@ class _HomeScreenState extends State<HomeScreen> {
       if (widget.workoutService.isInProgress && hr > 0) {
         widget.workoutService.recordHeartRate(hr);
       }
+    }
+  }
+
+  void _onTrainerDataChanged(TrainerData data) {
+    // Record trainer data for workout stats if workout is in progress
+    if (widget.workoutService.isInProgress && data.watts > 0) {
+      widget.workoutService.recordTrainerData(data.watts, data.cadenceRpm, data.speedKmh);
     }
   }
 

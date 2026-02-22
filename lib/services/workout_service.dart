@@ -16,6 +16,21 @@ class HeartRateReading {
   HeartRateReading({required this.bpm, required this.timestamp});
 }
 
+/// Trainer data reading with timestamp for activity history
+class TrainerDataReading {
+  final int watts;
+  final double cadenceRpm;
+  final double speedKmh;
+  final DateTime timestamp;
+
+  TrainerDataReading({
+    required this.watts,
+    required this.cadenceRpm,
+    required this.speedKmh,
+    required this.timestamp,
+  });
+}
+
 /// Service for managing workout timer and state
 class WorkoutService {
   final _stateController = StreamController<WorkoutState>.broadcast();
@@ -31,6 +46,10 @@ class WorkoutService {
   // Heart rate tracking with timestamps for HealthKit
   final List<HeartRateReading> _heartRateReadings = [];
   int _maxHeartRate = 0;
+
+  // Trainer data tracking (power, cadence, speed)
+  final List<TrainerDataReading> _trainerDataReadings = [];
+  int _maxWatts = 0;
 
   /// Stream of workout state changes
   Stream<WorkoutState> get stateStream => _stateController.stream;
@@ -61,6 +80,41 @@ class WorkoutService {
   /// Heart rate readings with timestamps for HealthKit
   List<HeartRateReading> get heartRateReadings => List.unmodifiable(_heartRateReadings);
 
+  /// Trainer data readings with timestamps for activity history
+  List<TrainerDataReading> get trainerDataReadings => List.unmodifiable(_trainerDataReadings);
+
+  /// Average watts during workout (0 if no readings)
+  int get averageWatts {
+    if (_trainerDataReadings.isEmpty) return 0;
+    final sum = _trainerDataReadings.fold(0, (sum, r) => sum + r.watts);
+    return (sum / _trainerDataReadings.length).round();
+  }
+
+  /// Maximum watts during workout
+  int get maxWatts => _maxWatts;
+
+  /// Average cadence during workout (0 if no readings)
+  int get averageCadence {
+    if (_trainerDataReadings.isEmpty) return 0;
+    final sum = _trainerDataReadings.fold(0.0, (sum, r) => sum + r.cadenceRpm);
+    return (sum / _trainerDataReadings.length).round();
+  }
+
+  /// Average speed in mph during workout (0 if no readings)
+  double get averageSpeedMph {
+    if (_trainerDataReadings.isEmpty) return 0.0;
+    final sum = _trainerDataReadings.fold(0.0, (sum, r) => sum + r.speedKmh);
+    final avgKmh = sum / _trainerDataReadings.length;
+    return avgKmh * 0.621371;
+  }
+
+  /// Maximum speed in mph during workout
+  double get maxSpeedMph {
+    if (_trainerDataReadings.isEmpty) return 0.0;
+    final maxKmh = _trainerDataReadings.fold(0.0, (max, r) => r.speedKmh > max ? r.speedKmh : max);
+    return maxKmh * 0.621371;
+  }
+
   /// Workout start time for HealthKit
   DateTime? get workoutStartTime => _workoutStartTime;
 
@@ -81,6 +135,8 @@ class WorkoutService {
     _accumulated = Duration.zero;
     _heartRateReadings.clear();
     _maxHeartRate = 0;
+    _trainerDataReadings.clear();
+    _maxWatts = 0;
     _updateState(WorkoutState.active);
     _startTimer();
   }
@@ -116,6 +172,8 @@ class WorkoutService {
     _accumulated = Duration.zero;
     _heartRateReadings.clear();
     _maxHeartRate = 0;
+    _trainerDataReadings.clear();
+    _maxWatts = 0;
     _updateState(WorkoutState.active);
     _elapsedController.add(Duration.zero);
     _startTimer();
@@ -144,6 +202,8 @@ class WorkoutService {
     _finalDuration = Duration.zero;
     _heartRateReadings.clear();
     _maxHeartRate = 0;
+    _trainerDataReadings.clear();
+    _maxWatts = 0;
     _updateState(WorkoutState.idle);
   }
 
@@ -154,6 +214,21 @@ class WorkoutService {
     _heartRateReadings.add(HeartRateReading(bpm: bpm, timestamp: DateTime.now()));
     if (bpm > _maxHeartRate) {
       _maxHeartRate = bpm;
+    }
+  }
+
+  /// Record a trainer data reading with timestamp (call this when trainer data updates during workout)
+  void recordTrainerData(int watts, double cadenceRpm, double speedKmh) {
+    if (!isInProgress || watts <= 0) return;
+
+    _trainerDataReadings.add(TrainerDataReading(
+      watts: watts,
+      cadenceRpm: cadenceRpm,
+      speedKmh: speedKmh,
+      timestamp: DateTime.now(),
+    ));
+    if (watts > _maxWatts) {
+      _maxWatts = watts;
     }
   }
 
