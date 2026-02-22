@@ -58,12 +58,13 @@ void main() {
               PixelIcon.close(),
               PixelIcon.check(),
               PixelIcon.lightningBolt(),
+              PixelIcon.person(),
             ],
           ),
         ),
       ));
-      // All 13 should render
-      expect(find.byType(PixelIcon), findsNWidgets(13));
+      // All 14 should render
+      expect(find.byType(PixelIcon), findsNWidgets(14));
     });
   });
 }

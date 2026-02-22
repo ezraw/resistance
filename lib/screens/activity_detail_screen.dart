@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../models/activity.dart';
 import '../models/activity_sample.dart';
 import '../services/activity_service.dart';
+import '../services/user_settings_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/arcade_background.dart';
@@ -16,11 +17,13 @@ import '../painters/power_zone_chart_painter.dart';
 class ActivityDetailScreen extends StatefulWidget {
   final Activity activity;
   final ActivityService activityService;
+  final UserSettingsService userSettingsService;
 
   const ActivityDetailScreen({
     super.key,
     required this.activity,
     required this.activityService,
+    required this.userSettingsService,
   });
 
   @override
@@ -232,7 +235,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
     if (heartRates.isEmpty) return const SizedBox.shrink();
 
-    final zoneData = HrZoneData.fromHeartRates(heartRates);
+    final maxHr = widget.userSettingsService.maxHeartRate ?? 190;
+    final zoneData = HrZoneData.fromHeartRates(heartRates, maxHr: maxHr);
     if (zoneData.isEmpty) return const SizedBox.shrink();
 
     final totalHrSeconds = heartRates.length;
@@ -244,7 +248,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'HEART RATE ZONES (MAX HR: 190)',
+            'HEART RATE ZONES (MAX HR: $maxHr)',
             style: AppTypography.label(fontSize: 7, color: AppColors.gold),
           ),
           const SizedBox(height: 12),
@@ -273,7 +277,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
     if (watts.isEmpty) return const SizedBox.shrink();
 
-    final zoneData = PowerZoneData.fromWatts(watts);
+    final ftp = widget.userSettingsService.ftp ?? 100;
+    final zoneData = PowerZoneData.fromWatts(watts, ftp: ftp);
     if (zoneData.isEmpty) return const SizedBox.shrink();
 
     final totalPowerSeconds = watts.length;
@@ -285,7 +290,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'POWER ZONES (FTP: 100W)',
+            'POWER ZONES (FTP: ${ftp}W)',
             style: AppTypography.label(fontSize: 7, color: AppColors.gold),
           ),
           const SizedBox(height: 12),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:resistance_app/services/activity_service.dart';
+import 'package:resistance_app/services/user_settings_service.dart';
 import 'package:resistance_app/screens/activity_list_screen.dart';
 
 void main() {
@@ -9,6 +11,7 @@ void main() {
   databaseFactory = databaseFactoryFfi;
 
   late ActivityService service;
+  late UserSettingsService userSettingsService;
 
   Future<ActivityService> createService() async {
     final db = await databaseFactoryFfi.openDatabase(
@@ -60,6 +63,9 @@ void main() {
 
   setUp(() async {
     service = await createService();
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    userSettingsService = UserSettingsService(prefs);
   });
 
   tearDown(() async {
@@ -74,7 +80,10 @@ void main() {
 
     testWidgets('builds successfully with title and back button', (tester) async {
       await tester.pumpWidget(MaterialApp(
-        home: ActivityListScreen(activityService: service),
+        home: ActivityListScreen(
+          activityService: service,
+          userSettingsService: userSettingsService,
+        ),
       ));
 
       expect(find.byType(ActivityListScreen), findsOneWidget);

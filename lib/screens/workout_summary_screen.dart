@@ -5,24 +5,28 @@ import '../services/workout_service.dart';
 import '../services/ble_service.dart';
 import '../services/health_service.dart';
 import '../services/activity_service.dart';
+import '../services/user_settings_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/arcade_background.dart';
 import '../widgets/arcade/arcade_panel.dart';
 import '../widgets/arcade/arcade_button.dart';
 import '../widgets/arcade/pixel_icon.dart';
+import '../widgets/arcade/arcade_badge.dart';
 import '../models/activity.dart';
 import '../models/activity_sample.dart';
 import '../painters/resistance_band_config.dart';
 import '../painters/pixel_celebration_painter.dart';
 import '../theme/page_transitions.dart';
 import 'activity_list_screen.dart';
+import 'user_settings_screen.dart';
 
 class WorkoutSummaryScreen extends StatefulWidget {
   final WorkoutService workoutService;
   final BleService bleService;
   final HealthService healthService;
   final ActivityService activityService;
+  final UserSettingsService userSettingsService;
 
   const WorkoutSummaryScreen({
     super.key,
@@ -30,6 +34,7 @@ class WorkoutSummaryScreen extends StatefulWidget {
     required this.bleService,
     required this.healthService,
     required this.activityService,
+    required this.userSettingsService,
   });
 
   @override
@@ -169,7 +174,10 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
   void _openHistory() {
     Navigator.of(context).push(
       ArcadePageRoute(
-        page: ActivityListScreen(activityService: widget.activityService),
+        page: ActivityListScreen(
+          activityService: widget.activityService,
+          userSettingsService: widget.userSettingsService,
+        ),
         transition: ArcadeTransition.slideRight,
       ),
     );
@@ -186,6 +194,17 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
       return '${minutes}m ${seconds}s';
     }
     return '${seconds}s';
+  }
+
+  void _openSettings() {
+    Navigator.of(context).push(
+      ArcadePageRoute(
+        page: UserSettingsScreen(
+          userSettingsService: widget.userSettingsService,
+        ),
+        transition: ArcadeTransition.slideRight,
+      ),
+    );
   }
 
   void _done() {
@@ -211,6 +230,19 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
+                    // YOU badge — right-aligned
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ArcadeBadge(
+                          icon: const PixelIcon.person(size: 12),
+                          text: 'YOU',
+                          borderColor: AppColors.electricViolet,
+                          onTap: _openSettings,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                     // Scrollable content area
                     Expanded(
                       child: Center(

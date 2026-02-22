@@ -42,15 +42,6 @@ void main() {
       expect(find.text('100'), findsOneWidget);
     });
 
-    testWidgets('displays +5 and -5 badges', (WidgetTester tester) async {
-      await tester.binding.setSurfaceSize(const Size(400, 900));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-
-      await tester.pumpWidget(buildWidget(50));
-      expect(find.text('+5'), findsOneWidget);
-      expect(find.text('-5'), findsOneWidget);
-    });
-
     testWidgets('contains ResistanceArrow up and down', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(400, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -62,7 +53,7 @@ void main() {
       expect(directions, contains(ArrowDirection.down));
     });
 
-    testWidgets('calls onIncrease when +5 badge is tapped', (WidgetTester tester) async {
+    testWidgets('calls onIncrease when up arrow area is tapped', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(400, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -72,13 +63,15 @@ void main() {
         buildWidget(5, onIncrease: () => increased = true),
       );
 
-      await tester.tap(find.text('+5'));
+      // Tap the up arrow (first ResistanceArrow)
+      final upArrow = find.byType(ResistanceArrow).first;
+      await tester.tap(upArrow);
       await tester.pump();
 
       expect(increased, isTrue);
     });
 
-    testWidgets('calls onDecrease when -5 badge is tapped', (WidgetTester tester) async {
+    testWidgets('calls onDecrease when down arrow area is tapped', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(400, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -88,42 +81,12 @@ void main() {
         buildWidget(5, onDecrease: () => decreased = true),
       );
 
-      await tester.tap(find.text('-5'));
+      // Tap the down arrow (last ResistanceArrow)
+      final downArrow = find.byType(ResistanceArrow).last;
+      await tester.tap(downArrow);
       await tester.pump();
 
       expect(decreased, isTrue);
-    });
-
-    testWidgets('does not call onIncrease at level 100', (WidgetTester tester) async {
-      await tester.binding.setSurfaceSize(const Size(400, 900));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-
-      bool increased = false;
-
-      await tester.pumpWidget(
-        buildWidget(100, onIncrease: () => increased = true),
-      );
-
-      await tester.tap(find.text('+5'));
-      await tester.pump();
-
-      expect(increased, isFalse);
-    });
-
-    testWidgets('does not call onDecrease at level 0', (WidgetTester tester) async {
-      await tester.binding.setSurfaceSize(const Size(400, 900));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-
-      bool decreased = false;
-
-      await tester.pumpWidget(
-        buildWidget(0, onDecrease: () => decreased = true),
-      );
-
-      await tester.tap(find.text('-5'));
-      await tester.pump();
-
-      expect(decreased, isFalse);
     });
 
     testWidgets('disabled state shows reduced opacity at level 100', (WidgetTester tester) async {

@@ -19,6 +19,7 @@ enum PixelIconType {
   check,
   list,
   lightningBolt,
+  person,
 }
 
 /// Renders pixel-art icons using CustomPainter.
@@ -85,6 +86,9 @@ class PixelIcon extends StatelessWidget {
   const PixelIcon.lightningBolt({super.key, this.size = 24, this.color, this.shadowColor})
       : type = PixelIconType.lightningBolt;
 
+  const PixelIcon.person({super.key, this.size = 24, this.color, this.shadowColor})
+      : type = PixelIconType.person;
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -132,6 +136,8 @@ class PixelIcon extends StatelessWidget {
         return AppColors.warmCream;
       case PixelIconType.lightningBolt:
         return AppColors.gold;
+      case PixelIconType.person:
+        return AppColors.warmCream;
     }
   }
 }
@@ -201,6 +207,9 @@ class _PixelIconPainter extends CustomPainter {
         break;
       case PixelIconType.lightningBolt:
         _drawLightningBolt(canvas, p, paint);
+        break;
+      case PixelIconType.person:
+        _drawPerson(canvas, p, paint);
         break;
     }
   }
@@ -445,6 +454,17 @@ class _PixelIconPainter extends CustomPainter {
       ..lineTo(4 * p, 9 * p)
       ..close();
     canvas.drawPath(path, paint);
+  }
+
+  void _drawPerson(Canvas canvas, double p, Paint paint) {
+    // Head block: 4x4 centered at columns 6-9, rows 2-5
+    canvas.drawRect(Rect.fromLTWH(6 * p, 2 * p, 4 * p, 4 * p), paint);
+    // Neck: 2x1 centered
+    canvas.drawRect(Rect.fromLTWH(7 * p, 6 * p, 2 * p, 1 * p), paint);
+    // Shoulders and torso: rows 7-10
+    canvas.drawRect(Rect.fromLTWH(3 * p, 7 * p, 10 * p, 2 * p), paint);
+    canvas.drawRect(Rect.fromLTWH(4 * p, 9 * p, 8 * p, 2 * p), paint);
+    canvas.drawRect(Rect.fromLTWH(5 * p, 11 * p, 6 * p, 2 * p), paint);
   }
 
   @override

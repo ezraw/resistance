@@ -10,6 +10,7 @@ import 'services/workout_service.dart';
 import 'services/hr_service.dart';
 import 'services/health_service.dart';
 import 'services/activity_service.dart';
+import 'services/user_settings_service.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -38,16 +39,27 @@ void main() async {
   final activityService = ActivityService.create();
   await activityService.init();
 
+  // Initialize user settings
+  final userSettingsService = await UserSettingsService.create();
+
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
-  runApp(ResistanceApp(activityService: activityService));
+  runApp(ResistanceApp(
+    activityService: activityService,
+    userSettingsService: userSettingsService,
+  ));
 }
 
 class ResistanceApp extends StatefulWidget {
   final ActivityService activityService;
+  final UserSettingsService userSettingsService;
 
-  const ResistanceApp({super.key, required this.activityService});
+  const ResistanceApp({
+    super.key,
+    required this.activityService,
+    required this.userSettingsService,
+  });
 
   @override
   State<ResistanceApp> createState() => _ResistanceAppState();
@@ -80,6 +92,7 @@ class _ResistanceAppState extends State<ResistanceApp> {
         hrService: _hrService,
         healthService: _healthService,
         activityService: widget.activityService,
+        userSettingsService: widget.userSettingsService,
       ),
     );
   }
