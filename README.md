@@ -56,12 +56,17 @@ A minimal mobile app with two buttons (up/down) and a percentage display (0-100%
 - Firebase Crashlytics integration for automatic crash reporting
 - Captures both Flutter and native iOS crashes
 
+### Workout History
+- Completed workouts automatically saved to local SQLite database
+- Activity list screen with date, duration, and avg HR
+- Activity detail screen with HR zone bar chart (5-zone model)
+- **Dev tool**: Long-press the HISTORY title for 10 seconds to seed 8 realistic test activities
+
 ## Future Enhancements
 
 - Zwift Ride handlebar control integration (use shift buttons to adjust resistance)
 - Live power/cadence/speed display
 - Preset resistance profiles
-- Workout history and trends
 - Android support
 
 ## Technical Details
@@ -101,7 +106,9 @@ lib/
 │   ├── ble_service.dart           # Bluetooth FTMS communication
 │   ├── workout_service.dart       # Workout timer and state
 │   ├── hr_service.dart            # Heart rate monitor BLE
-│   └── health_service.dart        # Apple HealthKit integration
+│   ├── health_service.dart        # Apple HealthKit integration
+│   ├── activity_service.dart      # SQLite workout storage
+│   └── seed_data_service.dart     # Test data generator (dev tool)
 └── widgets/
     ├── resistance_control.dart    # Up/Down/Level widget
     ├── workout_stats_bar.dart     # Timer + HR display bar

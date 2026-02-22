@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - 2026-02-22
+
+### Added
+- **Activity history**: Completed workouts are now stored locally in a SQLite database and can be reviewed from a new HISTORY screen
+  - **Auto-save**: Workouts automatically save to local history alongside Apple Health on completion
+  - **Activity list screen**: Scrollable list of past activities with date, duration, and avg HR (arcade styled with `ResistanceBandConfig.history` violet background)
+  - **Activity detail screen**: Read-only detail view showing duration, avg HR, max HR stat cards
+  - **HR zone bar chart**: Pixel-art horizontal bar chart showing time spent in each of 5 HR zones (Warm Up, Fat Burn, Cardio, Hard, Peak) using a `CustomPainter`
+  - **HISTORY button**: Available on home screen (idle state, below START) and workout summary screen (next to DONE)
+  - **Database schema**: `activities` table with future-proofed columns (watts, mph, cadence, calories, notes) and `activity_samples` table for per-second time-series data
+  - `PixelIcon.list`: Three stacked horizontal bars icon for HISTORY buttons
+  - `ResistanceBandConfig.history`: Cool violet background variant with subtle streaks (0.2 intensity)
+- **Database seed service**: In-app seeding mechanism to populate SQLite with 8 realistic test activities for verifying history list, detail screen, and HR zone charts
+  - Long-press the "HISTORY" title for 10 seconds to trigger seeding
+  - Confirmation dialog before generating data
+  - 8 activities spread over 3 weeks with varied durations (15-75 min), HR zones (Z1-Z5), and one no-HR activity
+  - Per-second HR samples with realistic warmup/main/cooldown phases and physiological jitter
+  - `SeedDataService`: Standalone service with deterministic `Random(42)` for reproducible output
+
+### Dependencies
+- Added `sqflite: ^2.4.1` for SQLite database
+- Added `path: ^1.9.0` for database path resolution
+- Added `sqflite_common_ffi: ^2.3.4+4` (dev) for desktop unit testing
+
+### Technical Details
+- `ActivityService`: SQLite CRUD service with transactional `insertWithSamples()` (~50ms for 1-hour workout)
+- `Activity.fromWorkout()`: Factory to create activity from `WorkoutService` state
+- `HrZoneData.fromHeartRates()`: Zone calculation accepting configurable max HR (default 190 BPM)
+- Storage estimate: ~100 KB per 1-hour workout, ~36 MB/year for daily workouts
+- 273 unit and widget tests (up from 216)
+- `flutter analyze` reports zero issues
+
 ## [0.6.5] - 2026-02-22
 
 ### Changed

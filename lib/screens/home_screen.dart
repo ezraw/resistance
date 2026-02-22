@@ -6,6 +6,7 @@ import '../services/ble_service.dart';
 import '../services/workout_service.dart';
 import '../services/hr_service.dart';
 import '../services/health_service.dart';
+import '../services/activity_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/page_transitions.dart';
 import '../widgets/resistance_control.dart';
@@ -17,12 +18,14 @@ import '../widgets/arcade/pixel_icon.dart';
 import 'scan_screen.dart';
 import 'workout_summary_screen.dart';
 import 'hr_scan_sheet.dart';
+import 'activity_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final BleService bleService;
   final WorkoutService workoutService;
   final HrService hrService;
   final HealthService healthService;
+  final ActivityService activityService;
 
   const HomeScreen({
     super.key,
@@ -30,6 +33,7 @@ class HomeScreen extends StatefulWidget {
     required this.workoutService,
     required this.hrService,
     required this.healthService,
+    required this.activityService,
   });
 
   @override
@@ -131,6 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
               workoutService: widget.workoutService,
               hrService: widget.hrService,
               healthService: widget.healthService,
+              activityService: widget.activityService,
             ),
             transition: ArcadeTransition.fadeScale,
           ),
@@ -157,6 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   workoutService: widget.workoutService,
                   hrService: widget.hrService,
                   healthService: widget.healthService,
+                  activityService: widget.activityService,
                 ),
               ),
             );
@@ -230,6 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
           workoutService: widget.workoutService,
           bleService: widget.bleService,
           healthService: widget.healthService,
+          activityService: widget.activityService,
         ),
         transition: ArcadeTransition.slideUp,
       ),
@@ -238,6 +245,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openHrScanSheet() {
     HrScanSheet.show(context, widget.hrService);
+  }
+
+  void _openHistory() {
+    Navigator.of(context).push(
+      ArcadePageRoute(
+        page: ActivityListScreen(activityService: widget.activityService),
+        transition: ArcadeTransition.slideRight,
+      ),
+    );
   }
 
   void _increaseResistance() {
@@ -423,6 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onResume: _resumeWorkout,
                 onRestart: _restartWorkout,
                 onFinish: _finishWorkout,
+                onHistory: _openHistory,
               ),
             ),
           ],

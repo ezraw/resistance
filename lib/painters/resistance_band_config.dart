@@ -41,4 +41,19 @@ class ResistanceBandConfig {
         showStreaks: true,
         streakIntensity: 0.3,
       );
+
+  /// History screen variant: cool violet tones with subtle streaks.
+  static const history = ResistanceBandConfig(
+    bandColors: [
+      Color(0xFF2A0E5C),
+      Color(0xFF220B4E),
+      Color(0xFF1A0840),
+      AppColors.nightPlum,
+      Color(0xFF1A0530),
+      Color(0xFF120425),
+      Color(0xFF0E031C),
+    ],
+    showStreaks: true,
+    streakIntensity: 0.2,
+  );
 }

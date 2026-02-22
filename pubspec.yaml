@@ -17,11 +17,14 @@ dependencies:
   firebase_crashlytics: ^4.2.1
   health: ^11.1.0
   wakelock_plus: ^1.2.8
+  sqflite: ^2.4.1
+  path: ^1.9.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  sqflite_common_ffi: ^2.3.4+4
 
 flutter:
   uses-material-design: true

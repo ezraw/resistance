@@ -36,7 +36,17 @@
 
 ## Workout History
 
-- [ ] **Store workout history**: Persist completed workouts locally so users can review past sessions
+- [x] **Store workout history**: Persist completed workouts locally so users can review past sessions
+  - [x] SQLite database with activities + activity_samples tables
+  - [x] Auto-save on workout finish (activity + HR samples in one transaction)
+  - [x] HISTORY button on home screen (idle state) and workout summary screen
+  - [x] Activity list screen with arcade styling
+  - [x] Activity detail screen with stat cards
+  - [x] HR zone bar chart (5-zone model, pixel-art horizontal bars)
+  - [x] PixelIcon.list icon type and ResistanceBandConfig.history background
+- [x] **Seed data service**: In-app database seeding (long-press HISTORY title 10s) to populate 8 realistic test activities
+- [ ] **Configurable max HR**: Allow user to set max heart rate for zone calculations (currently defaults to 190)
+- [ ] **Delete activities**: Add swipe-to-delete or long-press delete on activity list
 
 ## UI Redesign
 

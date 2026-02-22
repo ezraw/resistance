@@ -9,6 +9,7 @@ import 'services/ble_service.dart';
 import 'services/workout_service.dart';
 import 'services/hr_service.dart';
 import 'services/health_service.dart';
+import 'services/activity_service.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -33,14 +34,20 @@ void main() async {
     debugPrint('Firebase not initialized: $e');
   }
 
+  // Initialize activity history database
+  final activityService = ActivityService.create();
+  await activityService.init();
+
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
-  runApp(const ResistanceApp());
+  runApp(ResistanceApp(activityService: activityService));
 }
 
 class ResistanceApp extends StatefulWidget {
-  const ResistanceApp({super.key});
+  final ActivityService activityService;
+
+  const ResistanceApp({super.key, required this.activityService});
 
   @override
   State<ResistanceApp> createState() => _ResistanceAppState();
@@ -57,6 +64,7 @@ class _ResistanceAppState extends State<ResistanceApp> {
     _bleService.dispose();
     _workoutService.dispose();
     _hrService.dispose();
+    widget.activityService.dispose();
     super.dispose();
   }
 
@@ -71,6 +79,7 @@ class _ResistanceAppState extends State<ResistanceApp> {
         workoutService: _workoutService,
         hrService: _hrService,
         healthService: _healthService,
+        activityService: widget.activityService,
       ),
     );
   }

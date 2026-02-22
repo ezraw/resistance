@@ -5,6 +5,7 @@ import '../services/ble_service.dart';
 import '../services/workout_service.dart';
 import '../services/hr_service.dart';
 import '../services/health_service.dart';
+import '../services/activity_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/arcade_background.dart';
@@ -21,6 +22,7 @@ class ScanScreen extends StatefulWidget {
   final WorkoutService workoutService;
   final HrService hrService;
   final HealthService healthService;
+  final ActivityService activityService;
 
   const ScanScreen({
     super.key,
@@ -28,6 +30,7 @@ class ScanScreen extends StatefulWidget {
     required this.workoutService,
     required this.hrService,
     required this.healthService,
+    required this.activityService,
   });
 
   @override
@@ -152,6 +155,7 @@ class _ScanScreenState extends State<ScanScreen> with SingleTickerProviderStateM
           workoutService: widget.workoutService,
           hrService: widget.hrService,
           healthService: widget.healthService,
+          activityService: widget.activityService,
         ),
         transition: ArcadeTransition.slideRight,
       ),

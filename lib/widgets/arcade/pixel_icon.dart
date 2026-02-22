@@ -17,6 +17,7 @@ enum PixelIconType {
   greenDot,
   close,
   check,
+  list,
 }
 
 /// Renders pixel-art icons using CustomPainter.
@@ -77,6 +78,9 @@ class PixelIcon extends StatelessWidget {
   const PixelIcon.check({super.key, this.size = 24, this.color, this.shadowColor})
       : type = PixelIconType.check;
 
+  const PixelIcon.list({super.key, this.size = 24, this.color, this.shadowColor})
+      : type = PixelIconType.list;
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -120,6 +124,8 @@ class PixelIcon extends StatelessWidget {
         return AppColors.warmCream;
       case PixelIconType.check:
         return AppColors.nightPlum;
+      case PixelIconType.list:
+        return AppColors.warmCream;
     }
   }
 }
@@ -183,6 +189,9 @@ class _PixelIconPainter extends CustomPainter {
         break;
       case PixelIconType.check:
         _drawCheck(canvas, p, paint);
+        break;
+      case PixelIconType.list:
+        _drawList(canvas, p, paint);
         break;
     }
   }
@@ -406,6 +415,13 @@ class _PixelIconPainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTWH(8 * p, 6 * p, 2 * p, 2 * p), paint);
     canvas.drawRect(Rect.fromLTWH(10 * p, 4 * p, 2 * p, 2 * p), paint);
     canvas.drawRect(Rect.fromLTWH(12 * p, 2 * p, 2 * p, 2 * p), paint);
+  }
+
+  void _drawList(Canvas canvas, double p, Paint paint) {
+    // Three horizontal bars at y=4, y=8, y=12 (widths 10, 8, 6 pixels, each 2px tall)
+    canvas.drawRect(Rect.fromLTWH(3 * p, 4 * p, 10 * p, 2 * p), paint);
+    canvas.drawRect(Rect.fromLTWH(4 * p, 8 * p, 8 * p, 2 * p), paint);
+    canvas.drawRect(Rect.fromLTWH(5 * p, 12 * p, 6 * p, 2 * p), paint);
   }
 
   @override
