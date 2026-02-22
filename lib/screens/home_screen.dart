@@ -281,7 +281,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _sendBleUpdate(int level) async {
     final success = await widget.bleService.setResistanceLevel(level);
-    _hasPendingUpdate = false;
+    if (_pendingLevel == level) {
+      _hasPendingUpdate = false;
+    }
     if (!success && mounted) {
       // Revert to actual trainer level on failure
       setState(() {

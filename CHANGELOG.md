@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.4] - 2026-02-22
+
+### Fixed
+- **HR scan sheet styling**: Replaced plain `Container` with `ArcadePanel` for pixel stair-step corners consistent with the arcade style guide. Removed smooth-corner drag handle bar. Added bottom margin so the sheet floats above the screen edge.
+- **Resistance display bouncing on rapid taps**: Fixed race condition where overlapping debounced BLE writes could cause the resistance number to bounce between intermediate values. `_hasPendingUpdate` now only clears when the completed write matches the latest pending level.
+
+### Added
+- Debounce logic unit tests (6 tests covering overlapping writes, BLE stream suppression, rapid increase/decrease, slow taps, and failure scenarios)
+
+### Technical Details
+- 206 unit and widget tests (up from 200)
+- `flutter analyze` reports zero issues
+
 ## [0.6.3] - 2026-02-21
 
 ### Fixed

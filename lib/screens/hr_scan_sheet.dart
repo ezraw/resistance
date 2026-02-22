@@ -121,29 +121,12 @@ class _HrScanSheetState extends State<HrScanSheet> {
       maxChildSize: 0.8,
       builder: (context, scrollController) {
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.nightPlum,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-              border: Border.all(
-                color: AppColors.magenta,
-                width: 3,
-              ),
-            ),
+          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+          child: ArcadePanel(
+            borderColor: AppColors.magenta,
+            padding: EdgeInsets.zero,
             child: Column(
               children: [
-                // Handle bar
-                Container(
-                  margin: const EdgeInsets.only(top: 12, bottom: 8),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.warmCream.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-
                 // Title
                 Padding(
                   padding: const EdgeInsets.all(16),
