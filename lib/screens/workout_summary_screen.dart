@@ -4,25 +4,32 @@ import 'package:flutter/services.dart';
 import '../services/workout_service.dart';
 import '../services/ble_service.dart';
 import '../services/health_service.dart';
+import '../services/activity_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/arcade_background.dart';
 import '../widgets/arcade/arcade_panel.dart';
 import '../widgets/arcade/arcade_button.dart';
 import '../widgets/arcade/pixel_icon.dart';
+import '../models/activity.dart';
+import '../models/activity_sample.dart';
 import '../painters/resistance_band_config.dart';
 import '../painters/pixel_celebration_painter.dart';
+import '../theme/page_transitions.dart';
+import 'activity_list_screen.dart';
 
 class WorkoutSummaryScreen extends StatefulWidget {
   final WorkoutService workoutService;
   final BleService bleService;
   final HealthService healthService;
+  final ActivityService activityService;
 
   const WorkoutSummaryScreen({
     super.key,
     required this.workoutService,
     required this.bleService,
     required this.healthService,
+    required this.activityService,
   });
 
   @override
@@ -63,6 +70,7 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
     )..forward();
 
     _saveToHealthKit();
+    _saveToActivityHistory();
   }
 
   @override
@@ -93,6 +101,30 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
         _healthSaveSuccess = success;
       });
     }
+  }
+
+  Future<void> _saveToActivityHistory() async {
+    try {
+      final activity = Activity.fromWorkout(widget.workoutService);
+      final samples = widget.workoutService.heartRateReadings
+          .map((r) => ActivitySample(
+                timestamp: r.timestamp,
+                heartRate: r.bpm,
+              ))
+          .toList();
+      await widget.activityService.insertWithSamples(activity, samples);
+    } catch (e) {
+      debugPrint('Failed to save activity history: $e');
+    }
+  }
+
+  void _openHistory() {
+    Navigator.of(context).push(
+      ArcadePageRoute(
+        page: ActivityListScreen(activityService: widget.activityService),
+        transition: ArcadeTransition.slideRight,
+      ),
+    );
   }
 
   String _formatDuration(Duration duration) {
@@ -215,13 +247,26 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
 
                     const SizedBox(height: 16),
 
-                    // Done button — pinned at bottom
-                    ArcadeButton(
-                      label: 'DONE',
-                      icon: const PixelIcon.check(size: 16, color: AppColors.nightPlum),
-                      onTap: _done,
-                      scheme: ArcadeButtonScheme.gold,
-                      minWidth: 200,
+                    // Done + History buttons — pinned at bottom
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ArcadeButton(
+                          label: 'DONE',
+                          icon: const PixelIcon.check(size: 16, color: AppColors.nightPlum),
+                          onTap: _done,
+                          scheme: ArcadeButtonScheme.gold,
+                          minWidth: 140,
+                        ),
+                        const SizedBox(width: 12),
+                        ArcadeButton(
+                          label: 'HISTORY',
+                          icon: const PixelIcon.list(size: 16, color: AppColors.nightPlum),
+                          onTap: _openHistory,
+                          scheme: ArcadeButtonScheme.gold,
+                          minWidth: 140,
+                        ),
+                      ],
                     ),
                   ],
                 ),

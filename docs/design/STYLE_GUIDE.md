@@ -104,6 +104,7 @@ by screen context, but the structure is constant:
 | Main (max resistance) | Red → orange | Dark purple | Maximum |
 | Scan | Deep indigo | Night plum | None (radar instead) |
 | Summary | Hot pink | Deep violet | Subtle + sparkles |
+| History | Cool violet | Night plum | Subtle (0.2 intensity) |
 | Pause overlay | Lavender tint | Deep violet | Subdued |
 
 ---
@@ -272,6 +273,7 @@ All icons follow pixel-art construction:
 | Signal bars | Green/cyan | Device signal strength |
 | Green dot | Green (#00FF66) | Connected status |
 | Close/X | Warm cream | Dismiss buttons (sheets, dialogs) |
+| List (3 bars) | Warm cream / nightPlum | HISTORY button |
 
 ### Resistance Arrow Construction
 

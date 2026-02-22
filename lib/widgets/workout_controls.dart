@@ -14,6 +14,7 @@ class WorkoutControls extends StatefulWidget {
   final VoidCallback onResume;
   final VoidCallback onRestart;
   final VoidCallback onFinish;
+  final VoidCallback? onHistory;
 
   const WorkoutControls({
     super.key,
@@ -23,6 +24,7 @@ class WorkoutControls extends StatefulWidget {
     required this.onResume,
     required this.onRestart,
     required this.onFinish,
+    this.onHistory,
   });
 
   @override
@@ -84,24 +86,34 @@ class _WorkoutControlsState extends State<WorkoutControls>
 
     switch (widget.workoutState) {
       case WorkoutState.idle:
-        final button = ArcadeButton(
+        final startButton = ArcadeButton(
           label: 'START',
           icon: const PixelIcon.play(size: 16, color: AppColors.nightPlum),
           onTap: widget.onStart,
           scheme: ArcadeButtonScheme.gold,
         );
-        if (reduceMotion) return [button];
-        return [
-          AnimatedBuilder(
-            animation: _throbAnimation,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _throbAnimation.value,
-                child: child,
+        final throbbing = reduceMotion
+            ? startButton
+            : AnimatedBuilder(
+                animation: _throbAnimation,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _throbAnimation.value,
+                    child: child,
+                  );
+                },
+                child: startButton,
               );
-            },
-            child: button,
-          ),
+        return [
+          throbbing,
+          if (widget.onHistory != null)
+            ArcadeButton(
+              label: 'HISTORY',
+              icon: const PixelIcon.list(size: 16, color: AppColors.nightPlum),
+              onTap: widget.onHistory,
+              scheme: ArcadeButtonScheme.gold,
+              minWidth: 140,
+            ),
         ];
 
       case WorkoutState.active:
