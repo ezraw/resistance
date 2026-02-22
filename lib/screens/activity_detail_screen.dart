@@ -11,6 +11,7 @@ import '../widgets/arcade/arcade_button.dart';
 import '../widgets/arcade/pixel_icon.dart';
 import '../painters/resistance_band_config.dart';
 import '../painters/hr_zone_chart_painter.dart';
+import '../painters/power_zone_chart_painter.dart';
 
 class ActivityDetailScreen extends StatefulWidget {
   final Activity activity;
@@ -135,7 +136,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                               icon: const PixelIcon.heart(size: 24),
                               label: 'MAX HEART RATE',
                               value: '${activity.maxHeartRate} BPM',
-                              borderColor: AppColors.hotPink,
+                              borderColor: AppColors.magenta,
                             ),
                           ],
 
@@ -143,6 +144,30 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           if (_samples != null && _samples!.isNotEmpty) ...[
                             const SizedBox(height: 20),
                             _buildHrZoneChart(),
+                          ],
+
+                          // Power section
+                          if (activity.avgWatts != null) ...[
+                            const SizedBox(height: 20),
+                            _buildStatCard(
+                              icon: const PixelIcon.lightningBolt(size: 24),
+                              label: 'AVG POWER',
+                              value: '${activity.avgWatts} W',
+                              borderColor: AppColors.gold,
+                            ),
+                            if (activity.maxWatts != null) ...[
+                              const SizedBox(height: 12),
+                              _buildStatCard(
+                                icon: const PixelIcon.lightningBolt(size: 24),
+                                label: 'MAX POWER',
+                                value: '${activity.maxWatts} W',
+                                borderColor: AppColors.gold,
+                              ),
+                            ],
+                            if (_samples != null && _samples!.isNotEmpty) ...[
+                              const SizedBox(height: 20),
+                              _buildPowerZoneChart(),
+                            ],
                           ],
                         ],
                       ),
@@ -214,12 +239,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     final totalWorkoutSeconds = widget.activity.durationSeconds;
 
     return ArcadePanel.secondary(
-      borderColor: AppColors.electricViolet,
+      borderColor: AppColors.magenta,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'HEART RATE ZONES',
+            'HEART RATE ZONES (MAX HR: 190)',
             style: AppTypography.label(fontSize: 7, color: AppColors.gold),
           ),
           const SizedBox(height: 12),
@@ -233,6 +258,47 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           const SizedBox(height: 8),
           Text(
             'HR DATA: ${_formatDuration(totalHrSeconds)} OF ${_formatDuration(totalWorkoutSeconds)}',
+            style: AppTypography.secondary(fontSize: 6),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPowerZoneChart() {
+    final watts = _samples!
+        .where((s) => s.watts != null && s.watts! > 0)
+        .map((s) => s.watts!)
+        .toList();
+
+    if (watts.isEmpty) return const SizedBox.shrink();
+
+    final zoneData = PowerZoneData.fromWatts(watts);
+    if (zoneData.isEmpty) return const SizedBox.shrink();
+
+    final totalPowerSeconds = watts.length;
+    final totalWorkoutSeconds = widget.activity.durationSeconds;
+
+    return ArcadePanel.secondary(
+      borderColor: AppColors.gold,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'POWER ZONES (FTP: 100W)',
+            style: AppTypography.label(fontSize: 7, color: AppColors.gold),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 140,
+            child: CustomPaint(
+              size: const Size(double.infinity, 140),
+              painter: PowerZoneChartPainter(data: zoneData),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'POWER DATA: ${_formatDuration(totalPowerSeconds)} OF ${_formatDuration(totalWorkoutSeconds)}',
             style: AppTypography.secondary(fontSize: 6),
           ),
         ],

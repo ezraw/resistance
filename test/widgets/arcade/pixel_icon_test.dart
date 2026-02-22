@@ -57,12 +57,13 @@ void main() {
               PixelIcon.bluetooth(),
               PixelIcon.close(),
               PixelIcon.check(),
+              PixelIcon.lightningBolt(),
             ],
           ),
         ),
       ));
-      // All 12 should render
-      expect(find.byType(PixelIcon), findsNWidgets(12));
+      // All 13 should render
+      expect(find.byType(PixelIcon), findsNWidgets(13));
     });
   });
 }

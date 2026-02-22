@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1] - 2026-02-22
+
+### Added
+- **Power data on activity detail screen**: Three new gold-bordered cards displayed below the HR section when power data is available
+  - Avg Power card with lightning bolt icon
+  - Max Power card with lightning bolt icon
+  - Power Zones chart: 7-zone Coggan model (Recovery, Endurance, Tempo, Threshold, VO2max, Anaerobic, Neuromuscular) with default FTP of 100W
+- **Lightning bolt PixelIcon**: New `PixelIcon.lightningBolt` pixel-art icon for power cards (default gold color)
+- `PowerZoneChartPainter`: Pixel-art horizontal bar chart for 7 power zones, mirroring the HR zone chart style
+- `PowerZoneData.fromWatts()`: Buckets watt readings into Coggan zones by % of FTP
+
+### Changed
+- **Unified HR card borders**: Avg HR, Max HR, and HR Zones chart borders all use `AppColors.magenta` (previously mixed magenta/hotPink/electricViolet)
+- Power zone chart height is 140px (vs 100px for 5-row HR chart) to accommodate 7 rows
+
+### Technical Details
+- Power cards conditionally displayed only when `activity.avgWatts != null`
+- Card order: Duration → Avg HR → Max HR → HR Zones → Avg Power → Max Power → Power Zones
+- 20px gap between HR and power sections for visual grouping
+- 314 unit and widget tests (up from 298)
+- `flutter analyze` reports zero issues
+
 ## [0.8.0] - 2026-02-22
 
 ### Added

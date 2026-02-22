@@ -18,6 +18,7 @@ enum PixelIconType {
   close,
   check,
   list,
+  lightningBolt,
 }
 
 /// Renders pixel-art icons using CustomPainter.
@@ -81,6 +82,9 @@ class PixelIcon extends StatelessWidget {
   const PixelIcon.list({super.key, this.size = 24, this.color, this.shadowColor})
       : type = PixelIconType.list;
 
+  const PixelIcon.lightningBolt({super.key, this.size = 24, this.color, this.shadowColor})
+      : type = PixelIconType.lightningBolt;
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -126,6 +130,8 @@ class PixelIcon extends StatelessWidget {
         return AppColors.nightPlum;
       case PixelIconType.list:
         return AppColors.warmCream;
+      case PixelIconType.lightningBolt:
+        return AppColors.gold;
     }
   }
 }
@@ -192,6 +198,9 @@ class _PixelIconPainter extends CustomPainter {
         break;
       case PixelIconType.list:
         _drawList(canvas, p, paint);
+        break;
+      case PixelIconType.lightningBolt:
+        _drawLightningBolt(canvas, p, paint);
         break;
     }
   }
@@ -422,6 +431,20 @@ class _PixelIconPainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTWH(3 * p, 4 * p, 10 * p, 2 * p), paint);
     canvas.drawRect(Rect.fromLTWH(4 * p, 8 * p, 8 * p, 2 * p), paint);
     canvas.drawRect(Rect.fromLTWH(5 * p, 12 * p, 6 * p, 2 * p), paint);
+  }
+
+  void _drawLightningBolt(Canvas canvas, double p, Paint paint) {
+    // Jagged lightning bolt: wide top → narrow bottom point
+    final path = Path()
+      ..moveTo(9 * p, 1 * p)
+      ..lineTo(12 * p, 1 * p)
+      ..lineTo(8 * p, 7 * p)
+      ..lineTo(11 * p, 7 * p)
+      ..lineTo(6 * p, 15 * p)
+      ..lineTo(7 * p, 9 * p)
+      ..lineTo(4 * p, 9 * p)
+      ..close();
+    canvas.drawPath(path, paint);
   }
 
   @override

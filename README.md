@@ -59,7 +59,8 @@ A minimal mobile app with two buttons (up/down) and a percentage display (0-100%
 ### Workout History
 - Completed workouts automatically saved to local SQLite database
 - Activity list screen with date, duration, and avg HR
-- Activity detail screen with HR zone bar chart (5-zone model)
+- Activity detail screen with HR zone bar chart (5-zone model) and power zone bar chart (7-zone Coggan model)
+- Power cards (avg/max power, power zones) shown when power data is available
 - **Dev tool**: Long-press the HISTORY title for 10 seconds to seed 8 realistic test activities
 
 ### Trainer Metrics
