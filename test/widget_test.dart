@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:resistance_app/widgets/arcade/resistance_arrow.dart';
 import 'package:resistance_app/widgets/resistance_control.dart';
 
 void main() {
@@ -41,7 +42,27 @@ void main() {
       expect(find.text('100'), findsOneWidget);
     });
 
-    testWidgets('calls onIncrease when +5 button is tapped', (WidgetTester tester) async {
+    testWidgets('displays +5 and -5 badges', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(buildWidget(50));
+      expect(find.text('+5'), findsOneWidget);
+      expect(find.text('-5'), findsOneWidget);
+    });
+
+    testWidgets('contains ResistanceArrow up and down', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(buildWidget(50));
+      final arrows = tester.widgetList<ResistanceArrow>(find.byType(ResistanceArrow));
+      final directions = arrows.map((a) => a.direction).toList();
+      expect(directions, contains(ArrowDirection.up));
+      expect(directions, contains(ArrowDirection.down));
+    });
+
+    testWidgets('calls onIncrease when +5 badge is tapped', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(400, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -57,7 +78,7 @@ void main() {
       expect(increased, isTrue);
     });
 
-    testWidgets('calls onDecrease when -5 button is tapped', (WidgetTester tester) async {
+    testWidgets('calls onDecrease when -5 badge is tapped', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(400, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -103,6 +124,30 @@ void main() {
       await tester.pump();
 
       expect(decreased, isFalse);
+    });
+
+    testWidgets('disabled state shows reduced opacity at level 100', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(buildWidget(100));
+
+      // Find Opacity widgets — at level 100, the up arrow/badge should be dimmed
+      final opacityWidgets = tester.widgetList<Opacity>(find.byType(Opacity));
+      final dimmed = opacityWidgets.where((o) => o.opacity < 1.0);
+      expect(dimmed, isNotEmpty);
+    });
+
+    testWidgets('disabled state shows reduced opacity at level 0', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(buildWidget(0));
+
+      // Find Opacity widgets — at level 0, the down arrow/badge should be dimmed
+      final opacityWidgets = tester.widgetList<Opacity>(find.byType(Opacity));
+      final dimmed = opacityWidgets.where((o) => o.opacity < 1.0);
+      expect(dimmed, isNotEmpty);
     });
   });
 }

@@ -3,6 +3,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import 'arcade/arcade_panel.dart';
 import 'arcade/pixel_container.dart';
+import 'arcade/pixel_divider.dart';
+import 'arcade/resistance_arrow.dart';
 
 class ResistanceControl extends StatefulWidget {
   final int currentLevel;
@@ -68,9 +70,9 @@ class _ResistanceControlState extends State<ResistanceControl>
       child: Center(
         child: Padding(
           padding: const EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 60,
+            left: 16,
+            right: 16,
+            top: 36,
             bottom: 100,
           ),
           child: _buildControlPanel(),
@@ -80,86 +82,114 @@ class _ResistanceControlState extends State<ResistanceControl>
   }
 
   Widget _buildControlPanel() {
+    final increaseEnabled = widget.currentLevel < 100 && !widget.isUpdating;
+    final decreaseEnabled = widget.currentLevel > 0 && !widget.isUpdating;
+
     return ArcadePanel(
       borderColor: AppColors.magenta,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 240),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // +5 button
-            _buildIncrementButton(
-              label: '+5',
+      borderWidth: 8,
+      notchSize: 5,
+      steps: 4,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      child: Column(
+        children: [
+          // Top half — increase zone
+          Expanded(
+            child: GestureDetector(
               onTap: _handleIncrease,
-              isEnabled: widget.currentLevel < 100 && !widget.isUpdating,
-            ),
-
-            // Level number
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: AnimatedBuilder(
-                animation: _pulseAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _pulseAnimation.value > 1.0
-                        ? 1.0 + (_pulseAnimation.value - 1.0) * 0.5
-                        : 1.0,
-                    child: child,
-                  );
-                },
-                child: Text(
-                  '${widget.currentLevel}',
-                  style: AppTypography.resistanceNumber(
-                    fontSize: widget.currentLevel >= 100 ? 48 : 64,
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Spacer(),
+                  Opacity(
+                    opacity: increaseEnabled ? 1.0 : 0.35,
+                    child: _buildBadge('+5'),
                   ),
-                ),
+                  const SizedBox(height: 22),
+                  Opacity(
+                    opacity: increaseEnabled ? 1.0 : 0.35,
+                    child: const ResistanceArrow(
+                      direction: ArrowDirection.up,
+                      shadowColor: AppColors.goldDark,
+                    ),
+                  ),
+                  const Spacer(),
+                ],
               ),
             ),
+          ),
 
-            // -5 button
-            _buildIncrementButton(
-              label: '-5',
-              onTap: _handleDecrease,
-              isEnabled: widget.currentLevel > 0 && !widget.isUpdating,
+          // Divider right above number (arches up)
+          const PixelDivider(thickness: 3, margin: 0, archUp: true),
+          const SizedBox(height: 6),
+
+          // Center number with pulse animation
+          AnimatedBuilder(
+            animation: _pulseAnimation,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _pulseAnimation.value > 1.0
+                    ? 1.0 + (_pulseAnimation.value - 1.0) * 0.5
+                    : 1.0,
+                child: child,
+              );
+            },
+            child: Text(
+              '${widget.currentLevel}',
+              style: AppTypography.resistanceNumber(
+                fontSize: widget.currentLevel >= 100 ? 48 : 64,
+              ),
             ),
-          ],
-        ),
+          ),
+
+          const SizedBox(height: 6),
+          // Divider right below number
+          const PixelDivider(thickness: 3, margin: 0),
+
+          // Bottom half — decrease zone
+          Expanded(
+            child: GestureDetector(
+              onTap: _handleDecrease,
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Spacer(),
+                  Opacity(
+                    opacity: decreaseEnabled ? 1.0 : 0.35,
+                    child: const ResistanceArrow(
+                      direction: ArrowDirection.down,
+                      shadowColor: AppColors.burntOrange,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Opacity(
+                    opacity: decreaseEnabled ? 1.0 : 0.35,
+                    child: _buildBadge('-5'),
+                  ),
+                  const Spacer(),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildIncrementButton({
-    required String label,
-    required VoidCallback onTap,
-    required bool isEnabled,
-  }) {
-    return GestureDetector(
-      onTap: isEnabled ? onTap : null,
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: double.infinity,
-        child: PixelContainer(
-          fillColor: isEnabled
-              ? AppColors.gold
-              : AppColors.gold.withValues(alpha: 0.35),
-          borderColor: isEnabled
-              ? AppColors.goldDark
-              : AppColors.goldDark.withValues(alpha: 0.35),
-          borderWidth: 3,
-          notchSize: 3,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          child: Center(
-            child: Text(
-              label,
-              style: AppTypography.button(
-                fontSize: 14,
-                color: isEnabled
-                    ? AppColors.nightPlum
-                    : AppColors.nightPlum.withValues(alpha: 0.45),
-              ),
-            ),
-          ),
+  Widget _buildBadge(String label) {
+    return PixelContainer(
+      fillColor: Colors.transparent,
+      borderColor: AppColors.gold,
+      borderWidth: 2,
+      notchSize: 2,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Text(
+        label,
+        style: AppTypography.button(
+          fontSize: 12,
+          color: AppColors.gold,
         ),
       ),
     );

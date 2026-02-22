@@ -9,6 +9,7 @@ class PixelContainer extends StatelessWidget {
   final Color borderColor;
   final double borderWidth;
   final double notchSize;
+  final int steps;
   final EdgeInsetsGeometry padding;
 
   const PixelContainer({
@@ -18,6 +19,7 @@ class PixelContainer extends StatelessWidget {
     required this.borderColor,
     this.borderWidth = 2,
     this.notchSize = 3,
+    this.steps = 2,
     this.padding = EdgeInsets.zero,
   });
 
@@ -29,9 +31,10 @@ class PixelContainer extends StatelessWidget {
         borderColor: borderColor,
         borderWidth: borderWidth,
         notchSize: notchSize,
+        steps: steps,
       ),
       child: ClipPath(
-        clipper: _PixelBorderClipper(notchSize: notchSize),
+        clipper: _PixelBorderClipper(notchSize: notchSize, steps: steps),
         child: Padding(
           padding: padding,
           child: child,
@@ -44,15 +47,17 @@ class PixelContainer extends StatelessWidget {
 /// Clips child content to the pixel stair-step border path.
 class _PixelBorderClipper extends CustomClipper<Path> {
   final double notchSize;
+  final int steps;
 
-  const _PixelBorderClipper({required this.notchSize});
+  const _PixelBorderClipper({required this.notchSize, this.steps = 2});
 
   @override
   Path getClip(Size size) {
-    return buildPixelBorderPath(Offset.zero & size, notchSize);
+    return buildPixelBorderPathMultiStep(Offset.zero & size, notchSize,
+        steps: steps);
   }
 
   @override
   bool shouldReclip(_PixelBorderClipper oldClipper) =>
-      notchSize != oldClipper.notchSize;
+      notchSize != oldClipper.notchSize || steps != oldClipper.steps;
 }

@@ -49,3 +49,4 @@
   - [x] **Animations**: 9 animation types + custom screen transitions + Reduce Motion support
   - [x] **App icons**: Pixel-art icons matching arcade aesthetic
   - [x] **8-bit polish pass**: Pixelated radar, sharp panel corners, wider resistance panel, button line fix, pixel celebration, HR sheet margins/spinner
+  - [x] **Resistance panel v2**: Wide stair-stepped arrows, directional divider arcs, rounder panel corners (steps: 4), badge spacing, panel/button positioning

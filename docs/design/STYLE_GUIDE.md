@@ -154,13 +154,14 @@ All arcade containers use 2-step notched staircase corners instead of smooth
 `BorderRadius.circular()`. This is implemented via `PixelContainer` which
 wraps `PixelBorderPainter` (fill + stroke) and `ClipPath` (child clipping).
 
-| Component | notchSize | borderWidth |
-|-----------|-----------|-------------|
-| ArcadePanel (primary) | 4 | 6 |
-| ArcadePanel (secondary) | 3 | 2 |
-| ArcadeButton (all schemes) | 3 | 3 |
-| Increment button (+5/-5) | 3 | 3 |
-| ArcadeBadge | 2 | 2 |
+| Component | notchSize | borderWidth | steps |
+|-----------|-----------|-------------|-------|
+| ArcadePanel (primary) | 4 | 6 | 2 |
+| ArcadePanel (resistance) | 5 | 8 | 4 |
+| ArcadePanel (secondary) | 3 | 2 | 2 |
+| ArcadeButton (all schemes) | 3 | 3 | 2 |
+| Increment badge (+5/-5) | 2 | 2 | 2 |
+| ArcadeBadge | 2 | 2 | 2 |
 
 ### Rules for New Panels
 - NEVER use a plain rectangle without a colored border
@@ -220,10 +221,17 @@ All buttons follow the arcade cabinet button construction:
 - **Number**: White, centered inside or overlapping the heart
 - **Position**: Top-right corner
 
+### Pixel Divider
+- **Color**: Purple-magenta (#9E0EAB)
+- **Thickness**: 3px for resistance panel
+- **Arc direction**: Top divider arches UP (`archUp: true`), bottom divider arches DOWN (default)
+- **Margin**: 0 (full panel width) in resistance panel
+- **Spacing**: 6px gap from the resistance number on each side
+
 ### Increment Badge (+5 / -5)
 - **Fill**: Transparent with gold (#FFD700) border
 - **Text**: Gold, small, bold
-- **Position**: Directly above the up arrow (+5) and below the down arrow (-5)
+- **Position**: Above the up arrow (+5) and below the down arrow (-5), 22px gap from arrow
 
 ### Warning Indicator
 - **Shape**: Pixel-art triangle
@@ -251,8 +259,8 @@ All icons follow pixel-art construction:
 
 | Icon | Color | Context |
 |------|-------|---------|
-| Up arrow (chunky) | Gold with orange shadow | Directional indicator |
-| Down arrow (chunky) | Gold with orange shadow | Directional indicator |
+| Up arrow (chunky) | Gold with goldDark shadow | Resistance increase (`ResistanceArrow`) |
+| Down arrow (chunky) | Gold with burntOrange shadow | Resistance decrease (`ResistanceArrow`) |
 | Heart | Red with dark shading | Heart rate display |
 | Play triangle | Dark on gold, or white on color | START, RESUME buttons |
 | Pause bars | White or gold | PAUSE button |
@@ -264,6 +272,22 @@ All icons follow pixel-art construction:
 | Signal bars | Green/cyan | Device signal strength |
 | Green dot | Green (#00FF66) | Connected status |
 | Close/X | Warm cream | Dismiss buttons (sheets, dialogs) |
+
+### Resistance Arrow Construction
+
+The resistance arrows use a dedicated `ResistanceArrow` widget (not `PixelIcon`)
+with a `CustomPainter` on a **10x7 block grid**:
+
+- **Aspect ratio**: 10:7 (wider than tall, landscape orientation)
+- **Width**: 45% of panel interior via `LayoutBuilder`
+- **Height**: Derived from width: `height = width * 7/10`
+- **Arrowhead**: 5 rows (71% of height), stair-stepping from 2-block tip to 10-block base
+- **Shaft**: 2 rows (29% of height), 6 blocks wide (60% of base)
+- **Shadow**: Drawn 1 block unit below body, creating 3D raised look
+  - Up arrow: `AppColors.goldDark` (#CC9900)
+  - Down arrow: `AppColors.burntOrange` (#CC6600)
+- **Body**: `AppColors.gold` (#FFD700)
+- **All edges**: 90-degree right angles only (stair-stepped, no diagonals)
 
 ### Rules for New Icons
 - MUST follow pixel-art stepped construction
@@ -407,6 +431,11 @@ actual heart rate. When not connected, it pulses at a steady 1-beat-per-second.
 - **Modal bottom sheets** also follow this rule: add horizontal padding (16px) so they float with visible margins. Use 4px top corner radius to match panel style.
 - Minimum margin from screen edge to panel: 16px.
 - Content within panels: 16-24px padding.
+
+### Resistance Panel Layout
+- Outer padding: top 36, bottom 100, sides 16 (inside SafeArea)
+- This shifts the panel up and leaves room for workout buttons below
+- Workout controls positioned at: safe area bottom + 4px
 
 ### Touch Targets
 - Minimum tappable area: 44x44pt (Apple HIG)

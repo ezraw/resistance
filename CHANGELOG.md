@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.5] - 2026-02-22
+
+### Changed
+- **Resistance panel v2 redesign**: Wide stair-stepped pixel-art arrows (`ResistanceArrow`) replace narrow `PixelIcon` arrows. Arrows fill ~45% of panel width with 10:7 landscape aspect ratio and all 90-degree stair-step edges. Dividers moved adjacent to the resistance number (6px gap) instead of near the arrows. Panel border increased to 8px.
+- **Rounder panel corners**: Resistance panel now uses `notchSize: 5, steps: 4` (was `notchSize: 4, steps: 3`) for visibly rounder pixelated corners matching the reference design.
+- **Divider direction**: Top divider arches upward (`archUp: true`), bottom divider arches downward. `PixelDivider` now supports both directions via the `archUp` parameter. Thickness increased to 3px, margin 0 (full panel width).
+- **Panel positioning**: Outer padding adjusted (top: 36, bottom: 100) to shift panel upward and leave room for workout buttons. Workout controls moved to safe area bottom + 4px.
+- **Badge spacing**: +5/-5 badges positioned 22px from arrows (was 12px) for better visual separation.
+- **Multi-step pixel stair-step corners**: `buildPixelBorderPathMultiStep` generalizes the 2-step algorithm to N steps. All non-resistance callers unchanged (default `steps: 2`).
+- **Tappable zones**: Each half of the panel is a single GestureDetector — tapping anywhere in the top half increases, bottom half decreases.
+- **Disabled state**: Arrows and badges fade to 35% opacity when at 0%/100% instead of changing fill color.
+
+### Added
+- `ResistanceArrow`: Dedicated wide stair-stepped pixel-art arrow widget with LayoutBuilder sizing, 3D shadow (1 block offset), and CustomPainter rendering on a 10x7 block grid
+- `PixelDivider.archUp`: Parameter to control arc direction (up or down)
+- `buildPixelBorderPathMultiStep`: N-step staircase corner path function
+- `PixelDivider`: Pixel-art divider widget with configurable arc direction
+- `AppColors.burntOrange` (#CC6600): Extended functional color for down-arrow shadow
+- `steps` parameter threaded through `PixelBorderPainter`, `PixelContainer`, and `ArcadePanel`
+- Multi-step path tests, steps forwarding test, updated ResistanceControl widget tests
+
+### Technical Details
+- Outer padding: top 36, bottom 100, sides 16
+- Panel border: 8px, notchSize 5, steps 4
+- Arrow width: 45% of panel interior, height = width * 7/10
+- Arrow shadow: 1 block unit offset down (goldDark for up, burntOrange for down)
+- Workout controls bottom offset: safe area + 4px
+- 216 unit and widget tests
+- `flutter analyze` reports zero issues
+
 ## [0.6.4] - 2026-02-22
 
 ### Fixed

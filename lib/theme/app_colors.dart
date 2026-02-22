@@ -21,6 +21,7 @@ class AppColors {
   static const Color amber = Color(0xFFFFBF00);
   static const Color green = Color(0xFF00FF66);
   static const Color red = Color(0xFFFF3344);
+  static const Color burntOrange = Color(0xFFCC6600);
 
   /// Returns the top band color for a given resistance level (0-100).
   static Color resistanceBandColor(int level) {

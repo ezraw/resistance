@@ -1,5 +1,61 @@
 import 'package:flutter/material.dart';
 
+/// Builds a closed [Path] with N-step staircase corners. Each corner
+/// iterates [steps] times, alternating horizontal and vertical segments
+/// of [notchSize] length, consuming `steps * notchSize` pixels per axis.
+///
+/// With `steps: 2` the output is identical to [buildPixelBorderPath].
+///
+/// [inset] shrinks the path inward (used for stroke centering).
+Path buildPixelBorderPathMultiStep(
+  Rect rect,
+  double notchSize, {
+  double inset = 0,
+  int steps = 2,
+}) {
+  final l = rect.left + inset;
+  final t = rect.top + inset;
+  final r = rect.right - inset;
+  final b = rect.bottom - inset;
+  final n = notchSize;
+  final s = steps;
+
+  final path = Path()..moveTo(l + s * n, t);
+
+  // Top edge → top-right corner notch
+  path.lineTo(r - s * n, t);
+  for (int i = s; i >= 1; i--) {
+    path.lineTo(r - i * n, t + (s - i) * n + n);
+    if (i > 1) path.lineTo(r - (i - 1) * n, t + (s - i) * n + n);
+  }
+  path.lineTo(r, t + s * n);
+
+  // Right edge → bottom-right corner notch
+  path.lineTo(r, b - s * n);
+  for (int i = s; i >= 1; i--) {
+    path.lineTo(r - (s - i) * n - n, b - i * n);
+    if (i > 1) path.lineTo(r - (s - i) * n - n, b - (i - 1) * n);
+  }
+  path.lineTo(r - s * n, b);
+
+  // Bottom edge → bottom-left corner notch
+  path.lineTo(l + s * n, b);
+  for (int i = s; i >= 1; i--) {
+    path.lineTo(l + i * n, b - (s - i) * n - n);
+    if (i > 1) path.lineTo(l + (i - 1) * n, b - (s - i) * n - n);
+  }
+  path.lineTo(l, b - s * n);
+
+  // Left edge → back to top-left corner notch
+  path.lineTo(l, t + s * n);
+  for (int i = s; i >= 1; i--) {
+    path.lineTo(l + (s - i) * n + n, t + i * n);
+    if (i > 1) path.lineTo(l + (s - i) * n + n, t + (i - 1) * n);
+  }
+
+  return path..close();
+}
+
 /// Builds a closed [Path] with 2-step staircase corners, giving the
 /// classic 8-bit pixel border look. Each corner has two notch steps of
 /// [notchSize] pixels, creating a stepped diagonal instead of a curve.
@@ -48,12 +104,14 @@ class PixelBorderPainter extends CustomPainter {
   final Color borderColor;
   final double borderWidth;
   final double notchSize;
+  final int steps;
 
   const PixelBorderPainter({
     required this.fillColor,
     required this.borderColor,
     required this.borderWidth,
     required this.notchSize,
+    this.steps = 2,
   });
 
   @override
@@ -61,7 +119,8 @@ class PixelBorderPainter extends CustomPainter {
     final rect = Offset.zero & size;
 
     // Fill
-    final fillPath = buildPixelBorderPath(rect, notchSize);
+    final fillPath =
+        buildPixelBorderPathMultiStep(rect, notchSize, steps: steps);
     canvas.drawPath(
       fillPath,
       Paint()
@@ -71,8 +130,8 @@ class PixelBorderPainter extends CustomPainter {
 
     // Stroke (inset by half the border width so it stays within bounds)
     if (borderWidth > 0) {
-      final strokePath =
-          buildPixelBorderPath(rect, notchSize, inset: borderWidth / 2);
+      final strokePath = buildPixelBorderPathMultiStep(rect, notchSize,
+          inset: borderWidth / 2, steps: steps);
       canvas.drawPath(
         strokePath,
         Paint()
@@ -89,5 +148,6 @@ class PixelBorderPainter extends CustomPainter {
       fillColor != oldDelegate.fillColor ||
       borderColor != oldDelegate.borderColor ||
       borderWidth != oldDelegate.borderWidth ||
-      notchSize != oldDelegate.notchSize;
+      notchSize != oldDelegate.notchSize ||
+      steps != oldDelegate.steps;
 }

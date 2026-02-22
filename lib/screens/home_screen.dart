@@ -413,7 +413,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // Workout controls (bottom)
             Positioned(
-              bottom: MediaQuery.of(context).padding.bottom + 16,
+              bottom: MediaQuery.of(context).padding.bottom + 4,
               left: 0,
               right: 0,
               child: WorkoutControls(

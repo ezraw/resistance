@@ -10,6 +10,7 @@ class ArcadePanel extends StatelessWidget {
   final Color fillColor;
   final double borderWidth;
   final double notchSize;
+  final int steps;
   final EdgeInsetsGeometry padding;
 
   const ArcadePanel({
@@ -19,6 +20,7 @@ class ArcadePanel extends StatelessWidget {
     this.fillColor = AppColors.nightPlum,
     this.borderWidth = 6,
     this.notchSize = 4,
+    this.steps = 2,
     this.padding = const EdgeInsets.all(16),
   });
 
@@ -30,6 +32,7 @@ class ArcadePanel extends StatelessWidget {
     this.fillColor = AppColors.nightPlum,
     this.borderWidth = 2,
     this.notchSize = 3,
+    this.steps = 2,
     this.padding = const EdgeInsets.all(12),
   });
 
@@ -40,6 +43,7 @@ class ArcadePanel extends StatelessWidget {
       borderColor: borderColor,
       borderWidth: borderWidth,
       notchSize: notchSize,
+      steps: steps,
       padding: padding,
       child: child,
     );

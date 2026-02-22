@@ -72,5 +72,28 @@ void main() {
       final padding = tester.widget<Padding>(find.byType(Padding).last);
       expect(padding.padding, const EdgeInsets.all(20));
     });
+
+    testWidgets('steps parameter is forwarded to PixelBorderPainter',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+          body: PixelContainer(
+            fillColor: Colors.black,
+            borderColor: Colors.white,
+            steps: 3,
+            child: Text('Steps'),
+          ),
+        ),
+      ));
+
+      final customPaint = tester.widget<CustomPaint>(
+        find.descendant(
+          of: find.byType(PixelContainer),
+          matching: find.byType(CustomPaint),
+        ),
+      );
+      final painter = customPaint.painter as PixelBorderPainter;
+      expect(painter.steps, 3);
+    });
   });
 }
