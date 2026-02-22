@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0] - 2026-02-22
+
+### Added
+- **User settings screen**: New SETTINGS screen accessible via the YOU badge on every screen
+  - **Max Heart Rate** setting (100-230 BPM range, persisted via SharedPreferences)
+  - **FTP** setting (50-500 W range, persisted via SharedPreferences)
+  - Arcade-styled edit dialogs with validation, SAVE/CANCEL/CLEAR actions
+  - `UserSettingsService`: SharedPreferences-backed service with `@visibleForTesting` constructor
+- **Persistent top bar**: `AppTopBar` widget with connection badge (left) and YOU navigation badge (right), visible on HomeScreen in all workout states
+- **Data pills inside resistance panel**: Live HR (left) and power (right) indicators overlaid inside the resistance panel, vertically centered
+  - HR pill: tappable (opens HR scan sheet), landscape layout with heart icon + BPM or "--"
+  - Power pill: landscape layout with lightning bolt icon + watts or "--"
+  - No border outlines — clean, minimal visual noise
+- **Timer under PAUSE button**: Elapsed time badge shown below PAUSE button during active workout (stopwatch icon + MM:SS format)
+- **YOU badge on all screens**: Person icon + "YOU" text badge on WorkoutSummaryScreen and ActivityListScreen, navigating to settings
+- **Person pixel icon**: New `PixelIcon.person` pixel-art bust icon (default warm cream color)
+
+### Changed
+- **HomeScreen layout refactored to responsive Column**: Replaced Stack+Positioned layout with SafeArea > Column > [AppTopBar, Expanded(ResistanceControl), WorkoutControls]. Layout now adapts correctly to all screen sizes from iPhone SE to iPhone Pro Max
+- **Resistance panel simplified**: Removed +5/-5 increment badges and their 22px spacers. Each half now shows only the arrow between two spacers
+- **Resistance panel dividers enhanced**: Thickness increased (3→4px), arc dip increased (3→12px) for 3 visible pixel steps matching design reference, spacing from number increased to 16px above and 12px below
+- **Activity detail zone charts use user settings**: HR zone chart uses configured max HR (default 190), power zone chart uses configured FTP (default 100W). Chart labels update dynamically
+- **WorkoutControls**: Added optional `elapsed` parameter for timer display in active state
+- **ResistanceControl**: Now fills parent space (no internal SafeArea/absolute padding), accepts `leftOverlay`/`rightOverlay` widget parameters
+
+### Technical Details
+- `UserSettingsService` threaded through: main.dart → ResistanceApp → ScanScreen → HomeScreen → WorkoutSummaryScreen → ActivityListScreen → ActivityDetailScreen → UserSettingsScreen
+- `_currentWatts` state field added to HomeScreen, updated from trainer data stream
+- Style guide updated: person icon entry, responsive layout rules (Section 10)
+- CLAUDE.md updated: responsive positioning requirement for all UI work
+- Tests use `pump()` instead of `pumpAndSettle()` for screens with ArcadeBackground (infinite animation)
+- `flutter analyze` reports zero issues
+
 ## [0.8.1] - 2026-02-22
 
 ### Added

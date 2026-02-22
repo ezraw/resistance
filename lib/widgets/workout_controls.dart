@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/workout_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/accessibility.dart';
+import 'arcade/arcade_badge.dart';
 import 'arcade/arcade_button.dart';
 import 'arcade/pixel_icon.dart';
 
@@ -15,6 +16,7 @@ class WorkoutControls extends StatefulWidget {
   final VoidCallback onRestart;
   final VoidCallback onFinish;
   final VoidCallback? onHistory;
+  final Duration? elapsed;
 
   const WorkoutControls({
     super.key,
@@ -25,6 +27,7 @@ class WorkoutControls extends StatefulWidget {
     required this.onRestart,
     required this.onFinish,
     this.onHistory,
+    this.elapsed,
   });
 
   @override
@@ -118,12 +121,25 @@ class _WorkoutControlsState extends State<WorkoutControls>
 
       case WorkoutState.active:
         return [
-          ArcadeButton(
-            label: 'PAUSE',
-            icon: const PixelIcon.pause(size: 16, color: AppColors.white),
-            onTap: widget.onPause,
-            scheme: ArcadeButtonScheme.magenta,
-            minWidth: 200,
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ArcadeButton(
+                label: 'PAUSE',
+                icon: const PixelIcon.pause(size: 16, color: AppColors.white),
+                onTap: widget.onPause,
+                scheme: ArcadeButtonScheme.magenta,
+                minWidth: 200,
+              ),
+              if (widget.elapsed != null) ...[
+                const SizedBox(height: 8),
+                ArcadeBadge(
+                  icon: const PixelIcon.stopwatch(size: 12),
+                  text: _formatDuration(widget.elapsed!),
+                  borderColor: AppColors.electricViolet,
+                ),
+              ],
+            ],
           ),
         ];
 
@@ -154,5 +170,16 @@ class _WorkoutControlsState extends State<WorkoutControls>
       case WorkoutState.finished:
         return [];
     }
+  }
+
+  String _formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    final seconds = duration.inSeconds.remainder(60);
+
+    if (hours > 0) {
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    }
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 }

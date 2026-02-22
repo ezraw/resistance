@@ -274,6 +274,7 @@ All icons follow pixel-art construction:
 | Green dot | Green (#00FF66) | Connected status |
 | Close/X | Warm cream | Dismiss buttons (sheets, dialogs) |
 | List (3 bars) | Warm cream / nightPlum | HISTORY button |
+| Person (bust) | Warm cream | YOU badge, settings navigation |
 
 ### Resistance Arrow Construction
 
@@ -434,10 +435,36 @@ actual heart rate. When not connected, it pulses at a steady 1-beat-per-second.
 - Minimum margin from screen edge to panel: 16px.
 - Content within panels: 16-24px padding.
 
-### Resistance Panel Layout
-- Outer padding: top 36, bottom 100, sides 16 (inside SafeArea)
-- This shifts the panel up and leaves room for workout buttons below
-- Workout controls positioned at: safe area bottom + 4px
+### Responsive Layout (MANDATORY)
+
+All screen layouts MUST use relative positioning so they adapt correctly across
+all supported screen sizes, from iPhone SE (667pt tall) to iPhone Pro Max (932pt tall).
+
+**Required approach:**
+- Use `Column` with `Expanded` / `Flexible` for major vertical layout sections
+  (top bar, main content, bottom controls) — never `Stack` with absolute
+  `Positioned` offsets between them
+- Use `SafeArea` for system insets, `MediaQuery` proportions for spacing that
+  should scale with screen size
+- Small fixed pixel values are acceptable for internal widget details: icon
+  sizes, padding within a widget, border widths, spacing between siblings
+  inside a panel
+
+**Forbidden:**
+- Hardcoded pixel offsets to position major layout sections (e.g. `bottom: 90`
+  to leave room for buttons)
+- `Positioned` with absolute pixel values to arrange unrelated sections in a
+  `Stack` (use `Column` instead)
+
+**Example — HomeScreen vertical structure:**
+```
+SafeArea → Column
+  ├─ AppTopBar (intrinsic height)
+  ├─ SizedBox(height: 8)          // fixed gap is fine
+  ├─ Expanded(child: panel)       // fills remaining space
+  ├─ SizedBox(height: 8)          // fixed gap is fine
+  └─ WorkoutControls (intrinsic)  // natural height
+```
 
 ### Touch Targets
 - Minimum tappable area: 44x44pt (Apple HIG)
@@ -445,8 +472,8 @@ actual heart rate. When not connected, it pulses at a steady 1-beat-per-second.
 - Bottom buttons: minimum 48px height, 120px+ width
 
 ### Responsive Scaling
-- On smaller screens (iPhone SE): reduce panel padding and number font size, maintain button sizes
-- On larger screens (iPhone Pro Max): increase panel padding, allow number font to grow
+- On smaller screens (iPhone SE): panel takes less absolute space but same proportion
+- On larger screens (iPhone Pro Max): panel takes more absolute space, content breathes
 - NEVER let the panel touch the screen edges
 - NEVER let buttons overlap the panel
 

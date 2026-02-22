@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import 'arcade/arcade_panel.dart';
-import 'arcade/pixel_container.dart';
 import 'arcade/pixel_divider.dart';
 import 'arcade/resistance_arrow.dart';
 
@@ -11,6 +10,8 @@ class ResistanceControl extends StatefulWidget {
   final VoidCallback onIncrease;
   final VoidCallback onDecrease;
   final bool isUpdating;
+  final Widget? leftOverlay;
+  final Widget? rightOverlay;
 
   const ResistanceControl({
     super.key,
@@ -18,6 +19,8 @@ class ResistanceControl extends StatefulWidget {
     required this.onIncrease,
     required this.onDecrease,
     this.isUpdating = false,
+    this.leftOverlay,
+    this.rightOverlay,
   });
 
   @override
@@ -66,18 +69,9 @@ class _ResistanceControlState extends State<ResistanceControl>
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 36,
-            bottom: 100,
-          ),
-          child: _buildControlPanel(),
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: _buildControlPanel(),
     );
   }
 
@@ -91,107 +85,103 @@ class _ResistanceControlState extends State<ResistanceControl>
       notchSize: 5,
       steps: 4,
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      child: Column(
+      child: Stack(
         children: [
-          // Top half — increase zone
-          Expanded(
-            child: GestureDetector(
-              onTap: _handleIncrease,
-              behavior: HitTestBehavior.opaque,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Spacer(),
-                  Opacity(
-                    opacity: increaseEnabled ? 1.0 : 0.35,
-                    child: _buildBadge('+5'),
+          Column(
+            children: [
+              // Top half — increase zone
+              Expanded(
+                child: GestureDetector(
+                  onTap: _handleIncrease,
+                  behavior: HitTestBehavior.opaque,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Spacer(),
+                      Opacity(
+                        opacity: increaseEnabled ? 1.0 : 0.35,
+                        child: const ResistanceArrow(
+                          direction: ArrowDirection.up,
+                          shadowColor: AppColors.goldDark,
+                        ),
+                      ),
+                      const Spacer(),
+                    ],
                   ),
-                  const SizedBox(height: 22),
-                  Opacity(
-                    opacity: increaseEnabled ? 1.0 : 0.35,
-                    child: const ResistanceArrow(
-                      direction: ArrowDirection.up,
-                      shadowColor: AppColors.goldDark,
-                    ),
-                  ),
-                  const Spacer(),
-                ],
+                ),
               ),
-            ),
+
+              // Divider right above number (arches up)
+              const PixelDivider(thickness: 4, dip: 12, margin: 0, archUp: true),
+              const SizedBox(height: 16),
+
+              // Center number with pulse animation
+              AnimatedBuilder(
+                animation: _pulseAnimation,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _pulseAnimation.value > 1.0
+                        ? 1.0 + (_pulseAnimation.value - 1.0) * 0.5
+                        : 1.0,
+                    child: child,
+                  );
+                },
+                child: Text(
+                  '${widget.currentLevel}',
+                  style: AppTypography.resistanceNumber(
+                    fontSize: widget.currentLevel >= 100 ? 48 : 64,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+              // Divider right below number
+              const PixelDivider(thickness: 4, dip: 12, margin: 0),
+
+              // Bottom half — decrease zone
+              Expanded(
+                child: GestureDetector(
+                  onTap: _handleDecrease,
+                  behavior: HitTestBehavior.opaque,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Spacer(),
+                      Opacity(
+                        opacity: decreaseEnabled ? 1.0 : 0.35,
+                        child: const ResistanceArrow(
+                          direction: ArrowDirection.down,
+                          shadowColor: AppColors.burntOrange,
+                        ),
+                      ),
+                      const Spacer(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
 
-          // Divider right above number (arches up)
-          const PixelDivider(thickness: 3, margin: 0, archUp: true),
-          const SizedBox(height: 6),
-
-          // Center number with pulse animation
-          AnimatedBuilder(
-            animation: _pulseAnimation,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _pulseAnimation.value > 1.0
-                    ? 1.0 + (_pulseAnimation.value - 1.0) * 0.5
-                    : 1.0,
-                child: child,
-              );
-            },
-            child: Text(
-              '${widget.currentLevel}',
-              style: AppTypography.resistanceNumber(
-                fontSize: widget.currentLevel >= 100 ? 48 : 64,
-              ),
+          // Left overlay (e.g. HR pill) — vertically centered inside panel
+          if (widget.leftOverlay != null)
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: Center(child: widget.leftOverlay!),
             ),
-          ),
 
-          const SizedBox(height: 6),
-          // Divider right below number
-          const PixelDivider(thickness: 3, margin: 0),
-
-          // Bottom half — decrease zone
-          Expanded(
-            child: GestureDetector(
-              onTap: _handleDecrease,
-              behavior: HitTestBehavior.opaque,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Spacer(),
-                  Opacity(
-                    opacity: decreaseEnabled ? 1.0 : 0.35,
-                    child: const ResistanceArrow(
-                      direction: ArrowDirection.down,
-                      shadowColor: AppColors.burntOrange,
-                    ),
-                  ),
-                  const SizedBox(height: 22),
-                  Opacity(
-                    opacity: decreaseEnabled ? 1.0 : 0.35,
-                    child: _buildBadge('-5'),
-                  ),
-                  const Spacer(),
-                ],
-              ),
+          // Right overlay (e.g. Power pill) — vertically centered inside panel
+          if (widget.rightOverlay != null)
+            Positioned(
+              right: 0,
+              top: 0,
+              bottom: 0,
+              child: Center(child: widget.rightOverlay!),
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildBadge(String label) {
-    return PixelContainer(
-      fillColor: Colors.transparent,
-      borderColor: AppColors.gold,
-      borderWidth: 2,
-      notchSize: 2,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Text(
-        label,
-        style: AppTypography.button(
-          fontSize: 12,
-          color: AppColors.gold,
-        ),
-      ),
-    );
-  }
 }

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../models/activity.dart';
 import '../services/activity_service.dart';
 import '../services/seed_data_service.dart';
+import '../services/user_settings_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../theme/page_transitions.dart';
@@ -12,15 +13,19 @@ import '../widgets/arcade_background.dart';
 import '../widgets/arcade/arcade_panel.dart';
 import '../widgets/arcade/arcade_button.dart';
 import '../widgets/arcade/pixel_icon.dart';
+import '../widgets/arcade/arcade_badge.dart';
 import '../painters/resistance_band_config.dart';
 import 'activity_detail_screen.dart';
+import 'user_settings_screen.dart';
 
 class ActivityListScreen extends StatefulWidget {
   final ActivityService activityService;
+  final UserSettingsService userSettingsService;
 
   const ActivityListScreen({
     super.key,
     required this.activityService,
+    required this.userSettingsService,
   });
 
   @override
@@ -58,6 +63,18 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
         page: ActivityDetailScreen(
           activity: activity,
           activityService: widget.activityService,
+          userSettingsService: widget.userSettingsService,
+        ),
+        transition: ArcadeTransition.slideRight,
+      ),
+    );
+  }
+
+  void _openSettings() {
+    Navigator.of(context).push(
+      ArcadePageRoute(
+        page: UserSettingsScreen(
+          userSettingsService: widget.userSettingsService,
         ),
         transition: ArcadeTransition.slideRight,
       ),
@@ -178,6 +195,19 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
+                // YOU badge — right-aligned
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ArcadeBadge(
+                      icon: const PixelIcon.person(size: 12),
+                      text: 'YOU',
+                      borderColor: AppColors.electricViolet,
+                      onTap: _openSettings,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 Listener(
                   behavior: HitTestBehavior.opaque,
                   onPointerDown: (_) => _startSeedTimer(),

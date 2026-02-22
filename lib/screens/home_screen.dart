@@ -7,10 +7,12 @@ import '../services/workout_service.dart';
 import '../services/hr_service.dart';
 import '../services/health_service.dart';
 import '../services/activity_service.dart';
+import '../services/user_settings_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/page_transitions.dart';
+import '../theme/app_typography.dart';
+import '../widgets/app_top_bar.dart';
 import '../widgets/resistance_control.dart';
-import '../widgets/workout_stats_bar.dart';
 import '../widgets/workout_controls.dart';
 import '../widgets/arcade_background.dart';
 import '../widgets/arcade/arcade_badge.dart';
@@ -19,6 +21,7 @@ import 'scan_screen.dart';
 import 'workout_summary_screen.dart';
 import 'hr_scan_sheet.dart';
 import 'activity_list_screen.dart';
+import 'user_settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final BleService bleService;
@@ -26,6 +29,7 @@ class HomeScreen extends StatefulWidget {
   final HrService hrService;
   final HealthService healthService;
   final ActivityService activityService;
+  final UserSettingsService userSettingsService;
 
   const HomeScreen({
     super.key,
@@ -34,6 +38,7 @@ class HomeScreen extends StatefulWidget {
     required this.hrService,
     required this.healthService,
     required this.activityService,
+    required this.userSettingsService,
   });
 
   @override
@@ -57,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
   WorkoutState _workoutState = WorkoutState.idle;
   Duration _elapsed = Duration.zero;
   int? _heartRate;
+  int? _currentWatts;
   bool _hrConnected = false;
 
   @override
@@ -139,6 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
               hrService: widget.hrService,
               healthService: widget.healthService,
               activityService: widget.activityService,
+              userSettingsService: widget.userSettingsService,
             ),
             transition: ArcadeTransition.fadeScale,
           ),
@@ -166,6 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   hrService: widget.hrService,
                   healthService: widget.healthService,
                   activityService: widget.activityService,
+                  userSettingsService: widget.userSettingsService,
                 ),
               ),
             );
@@ -233,6 +241,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onTrainerDataChanged(TrainerData data) {
+    if (mounted) {
+      setState(() {
+        _currentWatts = data.watts > 0 ? data.watts : null;
+      });
+    }
     // Record trainer data for workout stats if workout is in progress
     if (widget.workoutService.isInProgress && data.watts > 0) {
       widget.workoutService.recordTrainerData(data.watts, data.cadenceRpm, data.speedKmh);
@@ -247,6 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
           bleService: widget.bleService,
           healthService: widget.healthService,
           activityService: widget.activityService,
+          userSettingsService: widget.userSettingsService,
         ),
         transition: ArcadeTransition.slideUp,
       ),
@@ -260,7 +274,21 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openHistory() {
     Navigator.of(context).push(
       ArcadePageRoute(
-        page: ActivityListScreen(activityService: widget.activityService),
+        page: ActivityListScreen(
+          activityService: widget.activityService,
+          userSettingsService: widget.userSettingsService,
+        ),
+        transition: ArcadeTransition.slideRight,
+      ),
+    );
+  }
+
+  void _openSettings() {
+    Navigator.of(context).push(
+      ArcadePageRoute(
+        page: UserSettingsScreen(
+          userSettingsService: widget.userSettingsService,
+        ),
         transition: ArcadeTransition.slideRight,
       ),
     );
@@ -385,64 +413,43 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isWorkoutInProgress = widget.workoutService.isInProgress;
-
     return Scaffold(
       body: ArcadeBackground(
         resistanceLevel: _currentLevel,
         isActive: _workoutState == WorkoutState.active,
-        child: Stack(
-          children: [
-            // Main resistance control (full screen)
-            ResistanceControl(
-              currentLevel: _currentLevel,
-              onIncrease: _increaseResistance,
-              onDecrease: _decreaseResistance,
-            ),
-
-            // Workout stats bar (top) - only show during workout
-            if (isWorkoutInProgress)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: WorkoutStatsBar(
-                  elapsed: _elapsed,
-                  heartRate: _heartRate,
-                  hrConnected: _hrConnected,
-                  isConnectionDegraded: widget.bleService.isDegraded,
-                  onHrTap: _openHrScanSheet,
-                ),
-              ),
-
-            // Connection indicator (top-left) - only show when not in workout
-            if (!isWorkoutInProgress)
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 8,
-                left: 16,
-                child: GestureDetector(
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Persistent top bar
+              AppTopBar(
+                leftBadge: GestureDetector(
                   onLongPress: _showDisconnectDialog,
-                  child: _buildConnectionIndicator(),
+                  child: _buildConnectionBadge(),
+                ),
+                onYouTap: _openSettings,
+              ),
+
+              const SizedBox(height: 8),
+
+              // Resistance panel — fills remaining vertical space
+              Expanded(
+                child: ResistanceControl(
+                  currentLevel: _currentLevel,
+                  onIncrease: _increaseResistance,
+                  onDecrease: _decreaseResistance,
+                  leftOverlay: GestureDetector(
+                    onTap: _openHrScanSheet,
+                    behavior: HitTestBehavior.opaque,
+                    child: _buildHrPill(),
+                  ),
+                  rightOverlay: _buildPowerPill(),
                 ),
               ),
 
-            // HR indicator (top-right) - only show when not in workout
-            if (!isWorkoutInProgress)
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 8,
-                right: 16,
-                child: GestureDetector(
-                  onTap: _openHrScanSheet,
-                  child: _buildHrIndicator(),
-                ),
-              ),
+              const SizedBox(height: 8),
 
-            // Workout controls (bottom)
-            Positioned(
-              bottom: MediaQuery.of(context).padding.bottom + 4,
-              left: 0,
-              right: 0,
-              child: WorkoutControls(
+              // Workout controls
+              WorkoutControls(
                 workoutState: _workoutState,
                 onStart: _startWorkout,
                 onPause: _pauseWorkout,
@@ -450,15 +457,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 onRestart: _restartWorkout,
                 onFinish: _finishWorkout,
                 onHistory: _openHistory,
+                elapsed: _workoutState == WorkoutState.active ? _elapsed : null,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildConnectionIndicator() {
+  Widget _buildConnectionBadge() {
     final String label;
     final Color borderColor;
     final PixelIcon icon;
@@ -483,14 +491,69 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHrIndicator() {
-    return ArcadeBadge(
-      icon: PixelIcon.heart(
-        size: 14,
-        color: _hrConnected ? AppColors.red : AppColors.white.withValues(alpha: 0.5),
+  Widget _buildHrPill() {
+    final hasHr = _hrConnected && _heartRate != null;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PixelIcon.heart(
+            size: 14,
+            color: _hrConnected ? AppColors.red : AppColors.white.withValues(alpha: 0.5),
+          ),
+          const SizedBox(width: 6),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                hasHr ? '$_heartRate' : '--',
+                style: AppTypography.number(fontSize: 12),
+              ),
+              Text(
+                'BPM',
+                style: AppTypography.label(
+                  fontSize: 5,
+                  color: AppColors.warmCream.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
-      text: _hrConnected && _heartRate != null ? '$_heartRate BPM' : 'HR',
-      borderColor: AppColors.magenta,
+    );
+  }
+
+  Widget _buildPowerPill() {
+    final hasWatts = _currentWatts != null;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                hasWatts ? '$_currentWatts' : '--',
+                style: AppTypography.number(fontSize: 12),
+              ),
+              Text(
+                'W',
+                style: AppTypography.label(
+                  fontSize: 5,
+                  color: AppColors.warmCream.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 6),
+          PixelIcon.lightningBolt(
+            size: 14,
+            color: hasWatts ? AppColors.gold : AppColors.white.withValues(alpha: 0.5),
+          ),
+        ],
+      ),
     );
   }
 }
