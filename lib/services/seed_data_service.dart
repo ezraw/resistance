@@ -53,6 +53,8 @@ class SeedDataService {
       int? avgCadence;
       double? avgMph;
       double? maxMph;
+      int? calories;
+      double? distanceMiles;
       if (trainerSamples.isNotEmpty) {
         final wattsList = trainerSamples.map((s) => s.watts!).toList();
         avgWatts = (wattsList.reduce((a, b) => a + b) / wattsList.length).round();
@@ -62,6 +64,15 @@ class SeedDataService {
         final speedList = trainerSamples.map((s) => s.speedMph!).toList();
         avgMph = speedList.reduce((a, b) => a + b) / speedList.length;
         maxMph = speedList.reduce((a, b) => a > b ? a : b);
+
+        // Calories: kcal ≈ kJ (power-based at ~25% efficiency)
+        final kJ = avgWatts * spec.durationSeconds / 1000.0;
+        calories = kJ.round();
+
+        // Distance: avgSpeed * duration
+        final avgSpeedMiles = avgMph;
+        final durationHours = spec.durationSeconds / 3600.0;
+        distanceMiles = avgSpeedMiles * durationHours;
       }
 
       final activity = Activity(
@@ -74,6 +85,8 @@ class SeedDataService {
         avgCadence: avgCadence,
         avgMph: avgMph,
         maxMph: maxMph,
+        calories: calories,
+        distanceMiles: distanceMiles,
         source: 'seed',
         createdAt: now,
       );
