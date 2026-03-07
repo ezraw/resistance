@@ -115,13 +115,23 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
                           const SizedBox(height: 24),
 
-                          // Duration
+                          // Duration & Calories (workout-level stats)
                           _buildStatCard(
                             icon: const PixelIcon.stopwatch(size: 24),
                             label: 'DURATION',
                             value: _formatDuration(activity.durationSeconds),
                             borderColor: AppColors.neonCyan,
                           ),
+
+                          if (activity.calories != null) ...[
+                            const SizedBox(height: 12),
+                            _buildStatCard(
+                              icon: const PixelIcon.fire(size: 24),
+                              label: 'CALORIES',
+                              value: '${activity.calories} KCAL',
+                              borderColor: AppColors.neonCyan,
+                            ),
+                          ],
 
                           if (activity.avgHeartRate != null) ...[
                             const SizedBox(height: 12),
@@ -147,16 +157,6 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           if (_samples != null && _samples!.isNotEmpty) ...[
                             const SizedBox(height: 20),
                             _buildHrZoneChart(),
-                          ],
-
-                          if (activity.calories != null) ...[
-                            const SizedBox(height: 12),
-                            _buildStatCard(
-                              icon: const PixelIcon.fire(size: 24),
-                              label: 'CALORIES',
-                              value: '${activity.calories} KCAL',
-                              borderColor: AppColors.amber,
-                            ),
                           ],
 
                           if (activity.distanceMiles != null) ...[

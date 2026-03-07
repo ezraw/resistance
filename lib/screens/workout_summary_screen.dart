@@ -275,13 +275,23 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
 
                               const SizedBox(height: 32),
 
-                              // Stats
+                              // Stats — workout-level summary
                               _buildStatCard(
                                 icon: const PixelIcon.stopwatch(size: 24),
                                 label: 'DURATION',
                                 value: _formatDuration(duration),
                                 borderColor: AppColors.neonCyan,
                               ),
+
+                              if (calories > 0) ...[
+                                const SizedBox(height: 12),
+                                _buildStatCard(
+                                  icon: const PixelIcon.fire(size: 24),
+                                  label: 'CALORIES',
+                                  value: '$calories KCAL',
+                                  borderColor: AppColors.neonCyan,
+                                ),
+                              ],
 
                               const SizedBox(height: 12),
 
@@ -320,16 +330,6 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
                                     ],
                                   ),
                                 ),
-
-                              if (calories > 0) ...[
-                                const SizedBox(height: 12),
-                                _buildStatCard(
-                                  icon: const PixelIcon.fire(size: 24),
-                                  label: 'CALORIES',
-                                  value: '$calories KCAL',
-                                  borderColor: AppColors.amber,
-                                ),
-                              ],
 
                               if (distanceMiles > 0) ...[
                                 const SizedBox(height: 12),
