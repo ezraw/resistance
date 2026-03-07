@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.0] - 2026-03-07
+
+### Added
+- **Calories sent to Apple Health**: Power-based calorie calculation using FTMS trainer watts (kcal ≈ kJ at ~25% gross mechanical efficiency). Calories appear in the Fitness app workout summary
+- **Distance sent to Apple Health**: Distance calculated by integrating trainer-reported speed over time. Distance appears in the Fitness app workout summary
+- **Calories and distance on workout summary**: New fire and road pixel-art stat cards shown when trainer data is available
+- **Calories and distance on activity detail**: Persisted to local database and displayed on the activity detail screen
+- **Fire and road PixelIcons**: New `PixelIcon.fire` (amber) and `PixelIcon.road` (neon cyan) pixel-art icons
+- `WorkoutService.totalCalories`: Power-based calorie getter
+- `WorkoutService.totalDistanceMeters` / `totalDistanceMiles`: Speed-integrated distance getters
+- `Activity.distanceMiles` field with database migration (v1 → v2)
+
+### Changed
+- **HealthKit authorization**: Now requests `ACTIVE_ENERGY_BURNED` and `DISTANCE_CYCLING` permissions in addition to workout and heart rate
+- **HealthKit workout data**: `writeWorkoutData` now passes `totalEnergyBurned` and `totalDistance` when available
+- **Activity.fromWorkout**: Populates `calories` and `distanceMiles` fields from workout service
+
+### Technical Details
+- Database migration adds `distance_miles REAL` column to activities table
+- Calorie formula: `kcal = avgWatts × durationSeconds / 1000` (standard cycling power-to-calories conversion)
+- Distance formula: trapezoidal integration of consecutive speed readings over time intervals
+- Calories and distance are null (hidden in UI) when no trainer data is available
+- `flutter analyze` reports zero issues; all tests pass
+
 ## [0.9.0] - 2026-02-22
 
 ### Added

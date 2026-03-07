@@ -149,6 +149,26 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                             _buildHrZoneChart(),
                           ],
 
+                          if (activity.calories != null) ...[
+                            const SizedBox(height: 12),
+                            _buildStatCard(
+                              icon: const PixelIcon.fire(size: 24),
+                              label: 'CALORIES',
+                              value: '${activity.calories} KCAL',
+                              borderColor: AppColors.amber,
+                            ),
+                          ],
+
+                          if (activity.distanceMiles != null) ...[
+                            const SizedBox(height: 12),
+                            _buildStatCard(
+                              icon: const PixelIcon.road(size: 24),
+                              label: 'DISTANCE',
+                              value: '${activity.distanceMiles!.toStringAsFixed(1)} MI',
+                              borderColor: AppColors.neonCyan,
+                            ),
+                          ],
+
                           // Power section
                           if (activity.avgWatts != null) ...[
                             const SizedBox(height: 20),

@@ -30,8 +30,12 @@ class HealthService {
         [
           HealthDataType.WORKOUT,
           HealthDataType.HEART_RATE,
+          HealthDataType.ACTIVE_ENERGY_BURNED,
+          HealthDataType.DISTANCE_CYCLING,
         ],
         permissions: [
+          HealthDataAccess.READ_WRITE,
+          HealthDataAccess.READ_WRITE,
           HealthDataAccess.READ_WRITE,
           HealthDataAccess.READ_WRITE,
         ],
@@ -52,6 +56,8 @@ class HealthService {
     required DateTime startTime,
     required Duration duration,
     required List<HeartRateReading> heartRateReadings,
+    int? totalCalories,
+    double? totalDistanceMeters,
   }) async {
     if (!isAvailable) return false;
 
@@ -71,6 +77,10 @@ class HealthService {
         activityType: HealthWorkoutActivityType.BIKING,
         start: startTime,
         end: endTime,
+        totalEnergyBurned: totalCalories,
+        totalEnergyBurnedUnit: HealthDataUnit.KILOCALORIE,
+        totalDistance: totalDistanceMeters?.round(),
+        totalDistanceUnit: HealthDataUnit.METER,
       );
 
       debugPrint('HealthKit: Workout save result: $workoutSuccess');

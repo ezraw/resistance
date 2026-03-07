@@ -14,6 +14,7 @@ class Activity {
   final int? avgCadence;
   final int? avgResistance;
   final int? calories;
+  final double? distanceMiles;
   final String? notes;
   final String source;
   final DateTime createdAt;
@@ -32,6 +33,7 @@ class Activity {
     this.avgCadence,
     this.avgResistance,
     this.calories,
+    this.distanceMiles,
     this.notes,
     this.source = 'resistance_app',
     required this.createdAt,
@@ -52,6 +54,8 @@ class Activity {
     final avgCad = workoutService.averageCadence;
     final avgSpd = workoutService.averageSpeedMph;
     final maxSpd = workoutService.maxSpeedMph;
+    final cal = workoutService.totalCalories;
+    final dist = workoutService.totalDistanceMiles;
 
     return Activity(
       startedAt: startTime.toUtc(),
@@ -63,6 +67,8 @@ class Activity {
       avgCadence: avgCad > 0 ? avgCad : null,
       avgMph: avgSpd > 0 ? avgSpd : null,
       maxMph: maxSpd > 0 ? maxSpd : null,
+      calories: cal > 0 ? cal : null,
+      distanceMiles: dist > 0 ? dist : null,
       source: 'resistance_app',
       createdAt: now,
     );
@@ -83,6 +89,7 @@ class Activity {
       avgCadence: map['avg_cadence'] as int?,
       avgResistance: map['avg_resistance'] as int?,
       calories: map['calories'] as int?,
+      distanceMiles: (map['distance_miles'] as num?)?.toDouble(),
       notes: map['notes'] as String?,
       source: map['source'] as String? ?? 'resistance_app',
       createdAt: DateTime.parse(map['created_at'] as String),
@@ -107,6 +114,7 @@ class Activity {
       'avg_cadence': avgCadence,
       'avg_resistance': avgResistance,
       'calories': calories,
+      'distance_miles': distanceMiles,
       'notes': notes,
       'source': source,
       'created_at': createdAt.toUtc().toIso8601String(),

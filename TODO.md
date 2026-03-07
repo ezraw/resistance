@@ -31,6 +31,7 @@
 
 ## HealthKit Enhancements
 
+- [x] **Calories and distance to HealthKit**: Calculate calories (power-based) and distance (speed × time) from FTMS trainer data and send to Apple Health
 - [ ] **Record speed (MPH)**: Read speed data from trainer via FTMS and save to HealthKit
 - [ ] **Indoor cycling activity type**: Request `health` package add iOS indoor cycling support (currently shows as outdoor)
 

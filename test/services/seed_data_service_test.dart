@@ -32,6 +32,7 @@ void main() {
               avg_cadence INTEGER,
               avg_resistance INTEGER,
               calories INTEGER,
+              distance_miles REAL,
               notes TEXT,
               source TEXT DEFAULT 'resistance_app',
               created_at TEXT NOT NULL,

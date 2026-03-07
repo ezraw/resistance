@@ -20,6 +20,8 @@ enum PixelIconType {
   list,
   lightningBolt,
   person,
+  fire,
+  road,
 }
 
 /// Renders pixel-art icons using CustomPainter.
@@ -89,6 +91,12 @@ class PixelIcon extends StatelessWidget {
   const PixelIcon.person({super.key, this.size = 24, this.color, this.shadowColor})
       : type = PixelIconType.person;
 
+  const PixelIcon.fire({super.key, this.size = 24, this.color, this.shadowColor})
+      : type = PixelIconType.fire;
+
+  const PixelIcon.road({super.key, this.size = 24, this.color, this.shadowColor})
+      : type = PixelIconType.road;
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -138,6 +146,10 @@ class PixelIcon extends StatelessWidget {
         return AppColors.gold;
       case PixelIconType.person:
         return AppColors.warmCream;
+      case PixelIconType.fire:
+        return AppColors.amber;
+      case PixelIconType.road:
+        return AppColors.neonCyan;
     }
   }
 }
@@ -210,6 +222,12 @@ class _PixelIconPainter extends CustomPainter {
         break;
       case PixelIconType.person:
         _drawPerson(canvas, p, paint);
+        break;
+      case PixelIconType.fire:
+        _drawFire(canvas, p, paint);
+        break;
+      case PixelIconType.road:
+        _drawRoad(canvas, p, paint);
         break;
     }
   }
@@ -465,6 +483,40 @@ class _PixelIconPainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTWH(3 * p, 7 * p, 10 * p, 2 * p), paint);
     canvas.drawRect(Rect.fromLTWH(4 * p, 9 * p, 8 * p, 2 * p), paint);
     canvas.drawRect(Rect.fromLTWH(5 * p, 11 * p, 6 * p, 2 * p), paint);
+  }
+
+  void _drawFire(Canvas canvas, double p, Paint paint) {
+    // Flame shape: narrow base, wide middle, pointed top
+    final path = Path()
+      ..moveTo(8 * p, 1 * p)
+      ..lineTo(10 * p, 4 * p)
+      ..lineTo(12 * p, 6 * p)
+      ..lineTo(12 * p, 10 * p)
+      ..lineTo(11 * p, 12 * p)
+      ..lineTo(9 * p, 14 * p)
+      ..lineTo(7 * p, 14 * p)
+      ..lineTo(5 * p, 12 * p)
+      ..lineTo(4 * p, 10 * p)
+      ..lineTo(4 * p, 6 * p)
+      ..lineTo(6 * p, 4 * p)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  void _drawRoad(Canvas canvas, double p, Paint paint) {
+    // Road with perspective: narrow top, wide bottom, dashed center line
+    final path = Path()
+      ..moveTo(6 * p, 2 * p)
+      ..lineTo(10 * p, 2 * p)
+      ..lineTo(13 * p, 14 * p)
+      ..lineTo(3 * p, 14 * p)
+      ..close();
+    canvas.drawPath(path, paint);
+    // Center dashes (dark cutout)
+    final darkPaint = Paint()..color = AppColors.nightPlum;
+    canvas.drawRect(Rect.fromLTWH(7.5 * p, 3 * p, 1 * p, 2 * p), darkPaint);
+    canvas.drawRect(Rect.fromLTWH(7.5 * p, 6.5 * p, 1 * p, 2 * p), darkPaint);
+    canvas.drawRect(Rect.fromLTWH(7.5 * p, 10 * p, 1 * p, 2 * p), darkPaint);
   }
 
   @override

@@ -94,10 +94,15 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
       _healthSaving = true;
     });
 
+    final calories = widget.workoutService.totalCalories;
+    final distanceMeters = widget.workoutService.totalDistanceMeters;
+
     final success = await widget.healthService.saveWorkout(
       startTime: startTime,
       duration: widget.workoutService.finalDuration,
       heartRateReadings: widget.workoutService.heartRateReadings,
+      totalCalories: calories > 0 ? calories : null,
+      totalDistanceMeters: distanceMeters > 0 ? distanceMeters : null,
     );
 
     if (mounted) {
@@ -218,6 +223,8 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
     final duration = widget.workoutService.finalDuration;
     final avgHr = widget.workoutService.averageHeartRate;
     final maxHr = widget.workoutService.maxHeartRate;
+    final calories = widget.workoutService.totalCalories;
+    final distanceMiles = widget.workoutService.totalDistanceMiles;
 
     return Scaffold(
       body: Stack(
@@ -313,6 +320,26 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
                                     ],
                                   ),
                                 ),
+
+                              if (calories > 0) ...[
+                                const SizedBox(height: 12),
+                                _buildStatCard(
+                                  icon: const PixelIcon.fire(size: 24),
+                                  label: 'CALORIES',
+                                  value: '$calories KCAL',
+                                  borderColor: AppColors.amber,
+                                ),
+                              ],
+
+                              if (distanceMiles > 0) ...[
+                                const SizedBox(height: 12),
+                                _buildStatCard(
+                                  icon: const PixelIcon.road(size: 24),
+                                  label: 'DISTANCE',
+                                  value: '${distanceMiles.toStringAsFixed(1)} MI',
+                                  borderColor: AppColors.neonCyan,
+                                ),
+                              ],
 
                               // HealthKit save status
                               if (widget.healthService.isAvailable) ...[

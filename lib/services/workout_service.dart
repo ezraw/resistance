@@ -115,6 +115,34 @@ class WorkoutService {
     return maxKmh * 0.621371;
   }
 
+  /// Total calories burned (power-based: kcal ≈ kJ for cycling at ~25% efficiency).
+  /// Returns 0 if no power data available.
+  int get totalCalories {
+    if (_trainerDataReadings.isEmpty) return 0;
+    final kJ = averageWatts * finalDuration.inSeconds / 1000.0;
+    // At ~25% gross mechanical efficiency, kcal ≈ kJ
+    return kJ.round();
+  }
+
+  /// Total distance in meters, integrated from trainer speed readings over time.
+  /// Returns 0.0 if no speed data available.
+  double get totalDistanceMeters {
+    if (_trainerDataReadings.length < 2) return 0.0;
+    double totalKm = 0.0;
+    for (int i = 1; i < _trainerDataReadings.length; i++) {
+      final prev = _trainerDataReadings[i - 1];
+      final curr = _trainerDataReadings[i];
+      final deltaSeconds = curr.timestamp.difference(prev.timestamp).inMilliseconds / 1000.0;
+      // Average speed between two consecutive readings
+      final avgSpeedKmh = (prev.speedKmh + curr.speedKmh) / 2.0;
+      totalKm += avgSpeedKmh * (deltaSeconds / 3600.0);
+    }
+    return totalKm * 1000.0;
+  }
+
+  /// Total distance in miles.
+  double get totalDistanceMiles => totalDistanceMeters * 0.000621371;
+
   /// Workout start time for HealthKit
   DateTime? get workoutStartTime => _workoutStartTime;
 

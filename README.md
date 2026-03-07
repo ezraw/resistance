@@ -55,6 +55,8 @@ A minimal mobile app with two buttons (up/down) and a percentage display (0-100%
 ### Apple Health Integration
 - Workouts automatically saved to Apple Health after completion
 - Includes duration, activity type (Cycling), and heart rate samples
+- Calories calculated from power data (power-based: kcal ≈ kJ)
+- Distance calculated from trainer-reported speed over time
 - Heart rate zones calculated automatically by Apple Fitness
 
 ### Crash Logging

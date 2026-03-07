@@ -39,6 +39,7 @@ void main() {
           avgCadence: 85,
           avgResistance: 50,
           calories: 500,
+          distanceMiles: 12.5,
           notes: 'Great workout!',
           source: 'resistance_app',
           createdAt: now,
@@ -60,6 +61,7 @@ void main() {
         expect(restored.avgCadence, 85);
         expect(restored.avgResistance, 50);
         expect(restored.calories, 500);
+        expect(restored.distanceMiles, 12.5);
         expect(restored.notes, 'Great workout!');
         expect(restored.source, 'resistance_app');
         expect(restored.createdAt, now);
@@ -80,6 +82,7 @@ void main() {
         expect(restored.avgCadence, isNull);
         expect(restored.avgResistance, isNull);
         expect(restored.calories, isNull);
+        expect(restored.distanceMiles, isNull);
         expect(restored.notes, isNull);
         expect(restored.updatedAt, isNull);
       });

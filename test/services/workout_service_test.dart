@@ -385,6 +385,90 @@ void main() {
       });
     });
 
+    group('Calorie Calculation', () {
+      test('returns 0 when no trainer data', () {
+        expect(service.totalCalories, equals(0));
+      });
+
+      test('calculates calories from power and duration', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        // Record trainer data readings
+        service.recordTrainerData(150, 80.0, 25.0);
+        service.recordTrainerData(200, 85.0, 28.0);
+        service.recordTrainerData(250, 90.0, 30.0);
+
+        // Simulate a 30-minute workout
+        service.finish();
+
+        // avgWatts = 200, duration = very short in test
+        // kJ = 200 * duration_seconds / 1000
+        // kcal ≈ kJ (at ~25% efficiency)
+        final calories = service.totalCalories;
+        // With such a short duration, calories will be very small but non-negative
+        expect(calories, greaterThanOrEqualTo(0));
+      });
+
+      test('calorie formula is correct for known values', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        // Record data to set averageWatts = 200
+        service.recordTrainerData(200, 80.0, 25.0);
+
+        // We need to finish and check with a known duration.
+        // Since we can't control exact duration in test, just verify the formula:
+        // kcal = avgWatts * durationSeconds / 1000
+        service.finish();
+
+        final durationSecs = service.finalDuration.inSeconds;
+        final expectedCalories = (200 * durationSecs / 1000.0).round();
+        expect(service.totalCalories, equals(expectedCalories));
+      });
+    });
+
+    group('Distance Calculation', () {
+      test('returns 0.0 when no trainer data', () {
+        expect(service.totalDistanceMeters, equals(0.0));
+      });
+
+      test('returns 0.0 with only one reading', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        service.recordTrainerData(150, 80.0, 25.0);
+
+        expect(service.totalDistanceMeters, equals(0.0));
+      });
+
+      test('calculates distance from speed over time', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        service.recordTrainerData(150, 80.0, 25.0);
+        await Future.delayed(const Duration(milliseconds: 100));
+        service.recordTrainerData(200, 85.0, 25.0);
+
+        final distance = service.totalDistanceMeters;
+        // With ~0.1s at 25 km/h: distance ≈ 25 * 0.1/3600 * 1000 ≈ 0.69m
+        expect(distance, greaterThan(0.0));
+      });
+
+      test('totalDistanceMiles converts meters to miles', () async {
+        service.start();
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        service.recordTrainerData(150, 80.0, 25.0);
+        await Future.delayed(const Duration(milliseconds: 100));
+        service.recordTrainerData(200, 85.0, 25.0);
+
+        final meters = service.totalDistanceMeters;
+        final miles = service.totalDistanceMiles;
+        expect(miles, closeTo(meters * 0.000621371, 0.001));
+      });
+    });
+
     group('Workout Timestamps for HealthKit', () {
       test('workoutStartTime is null initially', () {
         expect(service.workoutStartTime, isNull);

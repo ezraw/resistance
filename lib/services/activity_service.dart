@@ -24,8 +24,9 @@ class ActivityService {
     final dbPath = join(await getDatabasesPath(), 'resistance_app.db');
     _db = await openDatabase(
       dbPath,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -48,6 +49,7 @@ class ActivityService {
         avg_cadence INTEGER,
         avg_resistance INTEGER,
         calories INTEGER,
+        distance_miles REAL,
         notes TEXT,
         source TEXT DEFAULT 'resistance_app',
         created_at TEXT NOT NULL,
@@ -80,6 +82,14 @@ class ActivityService {
     );
 
     // Future: user_profile table for weight, height, age, max HR, FTP
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute(
+        'ALTER TABLE activities ADD COLUMN distance_miles REAL',
+      );
+    }
   }
 
   /// Insert an activity and its samples in a single transaction.
