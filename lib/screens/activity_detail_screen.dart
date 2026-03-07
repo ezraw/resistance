@@ -115,13 +115,23 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
                           const SizedBox(height: 24),
 
-                          // Duration & Calories (workout-level stats)
+                          // Workout-level stats: Duration, Distance, Calories
                           _buildStatCard(
                             icon: const PixelIcon.stopwatch(size: 24),
                             label: 'DURATION',
                             value: _formatDuration(activity.durationSeconds),
                             borderColor: AppColors.neonCyan,
                           ),
+
+                          if (activity.distanceMiles != null) ...[
+                            const SizedBox(height: 12),
+                            _buildStatCard(
+                              icon: const PixelIcon.road(size: 24),
+                              label: 'DISTANCE',
+                              value: '${activity.distanceMiles!.toStringAsFixed(1)} MI',
+                              borderColor: AppColors.neonCyan,
+                            ),
+                          ],
 
                           if (activity.calories != null) ...[
                             const SizedBox(height: 12),
@@ -157,16 +167,6 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           if (_samples != null && _samples!.isNotEmpty) ...[
                             const SizedBox(height: 20),
                             _buildHrZoneChart(),
-                          ],
-
-                          if (activity.distanceMiles != null) ...[
-                            const SizedBox(height: 12),
-                            _buildStatCard(
-                              icon: const PixelIcon.road(size: 24),
-                              label: 'DISTANCE',
-                              value: '${activity.distanceMiles!.toStringAsFixed(1)} MI',
-                              borderColor: AppColors.neonCyan,
-                            ),
                           ],
 
                           // Power section

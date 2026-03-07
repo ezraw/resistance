@@ -283,6 +283,16 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
                                 borderColor: AppColors.neonCyan,
                               ),
 
+                              if (distanceMiles > 0) ...[
+                                const SizedBox(height: 12),
+                                _buildStatCard(
+                                  icon: const PixelIcon.road(size: 24),
+                                  label: 'DISTANCE',
+                                  value: '${distanceMiles.toStringAsFixed(1)} MI',
+                                  borderColor: AppColors.neonCyan,
+                                ),
+                              ],
+
                               if (calories > 0) ...[
                                 const SizedBox(height: 12),
                                 _buildStatCard(
@@ -330,16 +340,6 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen>
                                     ],
                                   ),
                                 ),
-
-                              if (distanceMiles > 0) ...[
-                                const SizedBox(height: 12),
-                                _buildStatCard(
-                                  icon: const PixelIcon.road(size: 24),
-                                  label: 'DISTANCE',
-                                  value: '${distanceMiles.toStringAsFixed(1)} MI',
-                                  borderColor: AppColors.neonCyan,
-                                ),
-                              ],
 
                               // HealthKit save status
                               if (widget.healthService.isAvailable) ...[
